@@ -204,7 +204,7 @@ class Command:
 
         if len(matches) > 1:
             if multimatch_string:
-                names = ", ".join(obj.key for obj in matches[:5])
+                names = ", ".join(obj.name for obj in matches[:5])
                 self.msg(f"{multimatch_string} [{names}]")
             return matches[0]  # 返回第一个匹配
 

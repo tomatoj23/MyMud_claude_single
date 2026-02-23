@@ -123,6 +123,7 @@ class TestItemCanPickup:
         mock_model.typeclass_path = "src.game.typeclasses.character.Character"
         mock_model.location_id = None
         mock_model.attributes = {}
+        mock_model.contents = []  # 添加contents属性支持负重系统
         
         char = Character(mock_manager, mock_model)
         return char

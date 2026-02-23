@@ -7,12 +7,25 @@ import tempfile
 from pathlib import Path
 from typing import AsyncGenerator
 
+import pytest
 import pytest_asyncio
 
 from src.engine.core.engine import GameEngine
 from src.engine.objects.manager import ObjectManager
 from src.game.npc.core import NPC
-from src.utils.config import Config
+from src.utils.config import Config, ConfigManager
+
+
+# 单例重置fixture（自动使用）
+@pytest.fixture(autouse=True)
+def reset_singletons():
+    """每个测试前重置所有单例状态.
+    
+    确保测试之间相互隔离，避免单例状态污染。
+    """
+    ConfigManager.reset()
+    yield
+    ConfigManager.reset()
 
 
 # 全局引擎实例（每个测试模块复用）
@@ -41,12 +54,16 @@ async def _get_engine() -> GameEngine:
 async def engine() -> AsyncGenerator[GameEngine, None]:
     """获取引擎实例.
     
-    注意：引擎在测试结束后不会停止，以避免超时问题。
-    这是已知的限制，不影响测试结果。
+    测试后尝试清理资源，但允许超时。
     """
     eng = await _get_engine()
     yield eng
-    # 注意：不调用engine.stop()以避免超时
+    # 尝试清理资源
+    try:
+        import asyncio
+        await asyncio.wait_for(eng._save_all_objects(), timeout=2.0)
+    except asyncio.TimeoutError:
+        pass  # 超时继续
 
 
 @pytest_asyncio.fixture

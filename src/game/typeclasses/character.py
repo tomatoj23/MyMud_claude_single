@@ -27,6 +27,30 @@ class Character(CharacterEquipmentMixin, CharacterWuxueMixin, TypeclassBase):
 
     typeclass_path = "src.game.typeclasses.character.Character"
 
+    # ===== 显示名称 =====
+    @property
+    def name(self) -> str:
+        """
+        角色显示名称.
+        
+        返回 attributes 中的 name，如果不存在或为空则返回 key。
+        这确保向后兼容：旧对象没有 name 时显示 key。
+        
+        Returns:
+            显示名称（name 或 key 回退）
+        """
+        return self.db.get("name") or self.key
+
+    @name.setter
+    def name(self, value: str) -> None:
+        """
+        设置角色显示名称.
+        
+        Args:
+            value: 显示名称
+        """
+        self.db.set("name", value)
+
     # ===== 先天资质（创建时随机，1-30，几乎不变） =====
     @property
     def birth_talents(self) -> dict[str, int]:
@@ -214,6 +238,100 @@ class Character(CharacterEquipmentMixin, CharacterWuxueMixin, TypeclassBase):
         """计算敏捷（影响闪避、命中）."""
         base = self.attributes.get("agility", 10)
         return base
+
+    # ===== 负重系统 =====
+    def get_current_weight(self) -> int:
+        """获取当前负重.
+        
+        计算角色身上所有物品的重量之和。
+        
+        Returns:
+            当前负重值
+        """
+        total_weight = 0
+        # 尝试从数据库模型获取内容（用于测试和简单场景）
+        if hasattr(self, '_db_model') and hasattr(self._db_model, 'contents'):
+            for obj_data in self._db_model.contents:
+                if hasattr(obj_data, 'attributes') and 'weight' in obj_data.attributes:
+                    total_weight += max(0, obj_data.attributes.get('weight', 0))
+        
+        # 也从缓存的对象获取（如果可用）
+        for obj in self.contents:
+            if hasattr(obj, 'weight'):
+                total_weight += max(0, obj.weight)  # 负重量按0处理
+        
+        return total_weight
+
+    def get_max_weight(self) -> int:
+        """获取最大负重.
+        
+        计算公式：基础50 + 臂力*5 + 装备加成
+        
+        Returns:
+            最大负重值
+        """
+        base = 50
+        strength_bonus = self.attributes.get("strength", 10) * 5
+        equipment_bonus = self._get_equipment_weight_bonus()
+        return base + strength_bonus + equipment_bonus
+
+    def _get_equipment_weight_bonus(self) -> int:
+        """获取装备提供的负重加成.
+        
+        Returns:
+            装备负重加成值
+        """
+        # 从装备系统中获取加成
+        # 目前装备系统未完全实现，返回0
+        # TODO: 集成装备系统后完善
+        return 0
+
+    def can_carry(self, item: "Item") -> tuple[bool, str]:
+        """检查是否可以携带指定物品.
+        
+        Args:
+            item: 要携带的物品
+            
+        Returns:
+            (是否可以, 原因)
+        """
+        if not hasattr(item, 'weight'):
+            return True, ""  # 无重量属性，默认可携带
+        
+        item_weight = max(0, item.weight)
+        current_weight = self.get_current_weight()
+        max_weight = self.get_max_weight()
+        
+        # 零重量物品总是可以携带
+        if item_weight == 0:
+            return True, ""
+        
+        if current_weight + item_weight > max_weight:
+            need_space = item_weight
+            available = max_weight - current_weight
+            return False, f"太沉了，你拿不动（还需{need_space}负重空间，当前可用{available}）"
+        
+        return True, ""
+
+    def get_carry_weight_info(self) -> str:
+        """获取负重信息字符串.
+        
+        Returns:
+            负重信息，如 "当前负重: 45/100"
+        """
+        current = self.get_current_weight()
+        max_weight = self.get_max_weight()
+        percentage = (current / max_weight * 100) if max_weight > 0 else 0
+        
+        # 根据负重比例显示不同状态
+        if percentage >= 90:
+            status = "[沉重]"
+        elif percentage >= 70:
+            status = "[略重]"
+        else:
+            status = ""
+        
+        return f"当前负重: {current}/{max_weight} {status}".strip()
 
     # ===== 角色成长 =====
     @property
