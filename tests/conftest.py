@@ -54,12 +54,16 @@ async def _get_engine() -> GameEngine:
 async def engine() -> AsyncGenerator[GameEngine, None]:
     """获取引擎实例.
     
-    注意：引擎在测试结束后不会停止，以避免超时问题。
-    这是已知的限制，不影响测试结果。
+    测试后尝试清理资源，但允许超时。
     """
     eng = await _get_engine()
     yield eng
-    # 注意：不调用engine.stop()以避免超时
+    # 尝试清理资源
+    try:
+        import asyncio
+        await asyncio.wait_for(eng._save_all_objects(), timeout=2.0)
+    except asyncio.TimeoutError:
+        pass  # 超时继续
 
 
 @pytest_asyncio.fixture
