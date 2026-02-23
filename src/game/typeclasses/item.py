@@ -103,6 +103,8 @@ class Item(TypeclassBase):
     def can_pickup(self, character: "Character") -> tuple[bool, str]:
         """检查是否可以拾取.
 
+        检查角色是否有足够的负重空间拾取该物品。
+
         Args:
             character: 角色
 
@@ -110,8 +112,7 @@ class Item(TypeclassBase):
             (是否可以, 原因)
         """
         # 检查负重
-        # TODO: 实现负重检查
-        return True, ""
+        return character.can_carry(self)
 
     def can_use(self, character: "Character") -> tuple[bool, str]:
         """检查是否可以使用.
