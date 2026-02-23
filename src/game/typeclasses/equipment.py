@@ -403,8 +403,17 @@ class CharacterEquipmentMixin:
         """计算套装效果.
 
         Returns:
-            套装效果
+            套装效果，格式: {
+                "套装名称": {
+                    "count": 件数,
+                    "level": SetBonusLevel对象,
+                    "stats": {属性加成},
+                    "special": 特殊效果
+                }
+            }
         """
+        from src.game.data.set_bonuses import get_set_bonus_config
+        
         # 统计各套装件数
         set_counts: dict[str, int] = {}
         for slot in EquipmentSlot:
@@ -414,9 +423,86 @@ class CharacterEquipmentMixin:
 
         # 计算套装效果
         bonuses: dict[str, Any] = {}
-        # TODO: 根据套装件数计算效果
+        for set_name, count in set_counts.items():
+            config = get_set_bonus_config(set_name)
+            if config:
+                bonus_level = config.get_bonus_for_count(count)
+                if bonus_level:
+                    bonuses[set_name] = {
+                        "count": count,
+                        "level": bonus_level,
+                        "stats": bonus_level.stats_bonus or {},
+                        "special": bonus_level.special_effect
+                    }
 
         return bonuses
+    
+    def get_total_set_stats(self) -> dict[str, int | float]:
+        """获取所有套装效果提供的总属性加成.
+        
+        Returns:
+            合并后的属性加成字典
+        """
+        total_stats: dict[str, int | float] = {}
+        set_bonuses = self.get_set_bonuses()
+        
+        for set_name, bonus_info in set_bonuses.items():
+            stats = bonus_info.get("stats", {})
+            for stat, value in stats.items():
+                if stat in total_stats:
+                    total_stats[stat] += value
+                else:
+                    total_stats[stat] = value
+        
+        return total_stats
+    
+    def get_set_info(self) -> list[dict]:
+        """获取套装信息列表（用于显示）.
+        
+        Returns:
+            套装信息列表
+        """
+        from src.game.data.set_bonuses import get_set_bonus_config
+        
+        # 统计各套装件数
+        set_counts: dict[str, int] = {}
+        for slot in EquipmentSlot:
+            item = self.get_equipped(slot)
+            if item and item.set_name:
+                set_counts[item.set_name] = set_counts.get(item.set_name, 0) + 1
+        
+        result = []
+        for set_name, count in set_counts.items():
+            config = get_set_bonus_config(set_name)
+            info = {
+                "name": set_name,
+                "count": count,
+                "max_pieces": config.max_pieces if config else 0,
+                "active_bonus": None,
+                "next_bonus": None
+            }
+            
+            if config:
+                # 当前激活的效果
+                active = config.get_bonus_for_count(count)
+                if active:
+                    info["active_bonus"] = {
+                        "description": active.description,
+                        "required": active.required_count
+                    }
+                
+                # 下一个效果
+                for level in sorted(config.bonus_levels, key=lambda b: b.required_count):
+                    if level.required_count > count:
+                        info["next_bonus"] = {
+                            "description": level.description,
+                            "required": level.required_count
+                        }
+                        break
+            
+            result.append(info)
+        
+        return result
 
     def get_attack_bonus(self) -> int:
         """获取装备提供的攻击力加成."""

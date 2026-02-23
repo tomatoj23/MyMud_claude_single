@@ -345,8 +345,15 @@ class Exit(TypeclassBase):
         """
         # 检查锁
         if self.lock_str:
-            # TODO: 解析锁字符串，检查条件
-            pass
+            from src.utils.lock_parser import ExitLockParser, LockError
+            try:
+                condition = ExitLockParser.parse(self.lock_str)
+                if condition:
+                    passed, reason = condition.check(character)
+                    if not passed:
+                        return False, f"无法通行：{reason}"
+            except LockError as e:
+                return False, f"锁配置错误：{e}"
 
         # 检查目的地
         if not self.destination:
