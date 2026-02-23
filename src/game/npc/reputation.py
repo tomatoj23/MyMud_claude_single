@@ -250,14 +250,108 @@ class NPCRelationship:
         """清除所有关系数据."""
         self._set_relations({})
 
-    # ===== 派系关系（待扩展） =====
+    # ===== 派系关系（TD-009） =====
 
     def get_faction_favor(self, faction_id: str) -> int:
-        """获取派系好感度（预留）."""
-        # TODO: 实现派系关系
-        return 0
+        """获取派系好感度.
+        
+        Args:
+            faction_id: 派系ID（如"少林", "武当"）
+            
+        Returns:
+            好感度值（-10000到10000，0为中立）
+        """
+        relations = self._get_relations()
+        faction_relations = relations.get("factions", {})
+        return faction_relations.get(faction_id, 0)
 
-    def modify_faction_favor(self, faction_id: str, delta: int) -> None:
-        """修改派系好感度（预留）."""
-        # TODO: 实现派系关系
-        pass
+    def modify_faction_favor(self, faction_id: str, delta: int) -> int:
+        """修改派系好感度.
+        
+        Args:
+            faction_id: 派系ID
+            delta: 变化值（正数为增加好感，负数为减少）
+            
+        Returns:
+            新的好感度值
+        """
+        relations = self._get_relations()
+        
+        # 确保factions字典存在
+        if "factions" not in relations:
+            relations["factions"] = {}
+        
+        # 计算新值（限制范围）
+        current = relations["factions"].get(faction_id, 0)
+        new_value = max(-10000, min(10000, current + delta))
+        
+        relations["factions"][faction_id] = new_value
+        self._set_relations(relations)
+        
+        return new_value
+    
+    def get_faction_standings(self) -> dict[str, int]:
+        """获取所有派系关系.
+        
+        Returns:
+            派系关系字典 {派系ID: 好感度}
+        """
+        relations = self._get_relations()
+        return relations.get("factions", {}).copy()
+    
+    def get_faction_title(self, faction_id: str) -> str:
+        """获取在派系中的称号.
+        
+        Args:
+            faction_id: 派系ID
+            
+        Returns:
+            称号字符串
+        """
+        favor = self.get_faction_favor(faction_id)
+        
+        # 根据好感度返回称号
+        if favor >= 5000:
+            return "崇敬"
+        elif favor >= 2000:
+            return "尊敬"
+        elif favor >= 500:
+            return "友好"
+        elif favor >= -500:
+            return "中立"
+        elif favor >= -2000:
+            return "冷淡"
+        elif favor >= -5000:
+            return "敌对"
+        else:
+            return "仇恨"
+    
+    def is_faction_hostile(self, faction_id: str) -> bool:
+        """检查派系是否敌对.
+        
+        Args:
+            faction_id: 派系ID
+            
+        Returns:
+            是否敌对（好感度<=-2000）
+        """
+        return self.get_faction_favor(faction_id) <= -2000
+    
+    def is_faction_friendly(self, faction_id: str) -> bool:
+        """检查派系是否友好.
+        
+        Args:
+            faction_id: 派系ID
+            
+        Returns:
+            是否友好（好感度>=500）
+        """
+        return self.get_faction_favor(faction_id) >= 500
+    
+    def reset_faction_favor(self, faction_id: str) -> None:
+        """重置派系好感度为0.
+        
+        Args:
+            faction_id: 派系ID
+        """
+        self.modify_faction_favor(faction_id, -self.get_faction_favor(faction_id))

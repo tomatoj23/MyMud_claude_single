@@ -216,10 +216,14 @@ class PatrolNode(ActionNode):
         point = self.patrol_points[self._current_index]
         self._current_index = (self._current_index + 1) % len(self.patrol_points)
 
-        # TODO: 实现移动到巡逻点的逻辑
-        # 这里暂时返回成功
-        context["patrol_target"] = point
-        return True
+        # TD-002: 实现移动到巡逻点的逻辑
+        from .behavior_nodes import MovementController
+        success = await MovementController.move_to(npc, point)
+        
+        if success:
+            context["patrol_target"] = point
+            return True
+        return False
 
 
 class ReturnHomeNode(ActionNode):
@@ -235,10 +239,20 @@ class ReturnHomeNode(ActionNode):
         if not home:
             return False
 
-        # TODO: 检查当前位置与出生点的距离
+        # TD-003: 检查当前位置与出生点的距离
+        from .behavior_nodes import MovementController
+        distance = MovementController.get_distance_to_home(npc)
+        
         # 如果超出max_distance，则移动回家
-
-        context["home_target"] = home
+        if distance > self.max_distance:
+            success = await MovementController.move_to(npc, home)
+            if success:
+                context["home_target"] = home
+                context["distance_returned"] = distance
+                return True
+            return False
+        
+        # 距离范围内，不需要回家
         return True
 
 
@@ -256,8 +270,14 @@ class RandomMoveNode(ActionNode):
         if random.random() > self.probability:
             return False
 
-        # TODO: 实现随机移动逻辑
-        return True
+        # TD-004: 实现随机移动逻辑
+        from .behavior_nodes import MovementController
+        success = await MovementController.move_randomly(npc)
+        
+        if success:
+            context["random_moved"] = True
+            return True
+        return False
 
 
 class IsInCombatNode(ConditionNode):
@@ -267,8 +287,11 @@ class IsInCombatNode(ConditionNode):
         super().__init__(self._check_combat)
 
     async def _check_combat(self, npc: NPC, context: dict) -> bool:
-        # TODO: 检查NPC是否在战斗中
-        return False
+        # TD-005: 检查NPC是否在战斗中
+        from .behavior_nodes import CombatChecker
+        in_combat = CombatChecker.is_in_combat(npc)
+        context["in_combat"] = in_combat
+        return in_combat
 
 
 class IsNightNode(ConditionNode):
@@ -278,8 +301,12 @@ class IsNightNode(ConditionNode):
         super().__init__(self._check_night)
 
     async def _check_night(self, npc: NPC, context: dict) -> bool:
-        # TODO: 从游戏时间系统获取当前时间
-        return False
+        # TD-006: 从游戏时间系统获取当前时间
+        from .behavior_nodes import GameTime
+        is_night = GameTime.is_night()
+        context["is_night"] = is_night
+        context["current_hour"] = GameTime.get_current_hour()
+        return is_night
 
 
 class HasPlayerNearbyNode(ConditionNode):
@@ -290,8 +317,31 @@ class HasPlayerNearbyNode(ConditionNode):
         super().__init__(self._check_player)
 
     async def _check_player(self, npc: NPC, context: dict) -> bool:
-        # TODO: 检查范围内是否有玩家
-        return False
+        # TD-007: 检查范围内是否有玩家
+        from .behavior_nodes import NPCUtils
+        players = NPCUtils.get_nearby_players(npc, self.range_distance)
+        has_player = len(players) > 0
+        context["nearby_players"] = players
+        context["player_count"] = len(players)
+        return has_player
+
+
+class IsTooFarFromHomeNode(ConditionNode):
+    """检查是否离家太远."""
+
+    def __init__(self, max_distance: float = 50.0):
+        self.max_distance = max_distance
+        super().__init__(self._check_distance)
+
+    async def _check_distance(self, npc: NPC, context: dict) -> bool:
+        # TD-008: 检查是否离家太远
+        from .behavior_nodes import MovementController
+        distance = MovementController.get_distance_to_home(npc)
+        too_far = distance > self.max_distance
+        context["distance_to_home"] = distance
+        context["max_distance"] = self.max_distance
+        context["too_far_from_home"] = too_far
+        return too_far
 
 
 # ===== 预设行为树 =====
@@ -310,7 +360,7 @@ def create_patrol_behavior(patrol_points: list[str]) -> NPCBehaviorTree:
     # 2. 否则巡逻
     root = SelectorNode([
         SequenceNode([
-            ConditionNode(lambda n, c: False),  # TODO: 检查是否离家太远
+            IsTooFarFromHomeNode(max_distance=50.0),  # TD-008: 检查是否离家太远
             ReturnHomeNode(),
         ]),
         PatrolNode(patrol_points),
