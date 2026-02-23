@@ -149,6 +149,74 @@ class SmartAI(CombatAI):
         else:
             return random.choice(targets)
 
+    def _get_main_opponent(self, character: Character) -> Character | None:
+        """获取主要对手（当前战斗中的敌人）."""
+        # 简化实现：从角色获取当前战斗会话
+        if hasattr(character, 'combat_session') and character.combat_session:
+            combat = character.combat_session
+            if hasattr(combat, 'get_alive_enemies'):
+                enemies = combat.get_alive_enemies(character)
+                if enemies:
+                    return enemies[0]
+        return None
+    
+    def _get_opponent_wuxue_type(self, opponent: Character):
+        """获取对手的武学类型."""
+        if hasattr(opponent, 'current_wuxue') and opponent.current_wuxue:
+            return opponent.current_wuxue.wuxue_type
+        if hasattr(opponent, 'default_wuxue_type'):
+            return opponent.default_wuxue_type
+        return None
+    
+    def _select_counter_move(self, moves: list[tuple], opponent_type) -> tuple | None:
+        """基于克制关系选择招式 (TD-026).
+        
+        Args:
+            moves: 可用招式列表 [(kungfu, move), ...]
+            opponent_type: 对手的武学类型
+            
+        Returns:
+            克制的招式或None
+        """
+        if not opponent_type or not moves:
+            return None
+        
+        from src.game.typeclasses.wuxue import COUNTER_MATRIX
+        
+        # 寻找能克制对手武学类型的招式
+        # COUNTER_MATRIX[attack_type] = [被克制的类型列表]
+        # 所以我们要找：opponent_type in COUNTER_MATRIX[move_type]
+        for kungfu, move in moves:
+            counters = COUNTER_MATRIX.get(move.wuxue_type, [])
+            if opponent_type in counters:
+                return (kungfu, move)
+        
+        return None
+    
+    def _select_highest_damage_move(self, moves: list[tuple]) -> tuple | None:
+        """选择伤害最高的招式 (TD-027).
+        
+        Args:
+            moves: 可用招式列表 [(kungfu, move), ...]
+            
+        Returns:
+            伤害最高的招式或None
+        """
+        if not moves:
+            return None
+        
+        def get_move_damage(item):
+            kungfu, move = item
+            # 优先使用招式的damage属性
+            if hasattr(move, 'damage'):
+                return move.damage
+            # 回退到基础伤害+武学加成
+            base = 10
+            level_bonus = kungfu.level if hasattr(kungfu, 'level') else 1
+            return base * level_bonus
+        
+        return max(moves, key=get_move_damage)
+
     def _select_best_move(
         self, moves: list[tuple], target: Character
     ) -> tuple | None:
@@ -156,14 +224,23 @@ class SmartAI(CombatAI):
 
         策略：
         - 优先选择高伤害的招式
-        - 考虑克制关系（待实现）
+        - 考虑克制关系 (TD-026)
         """
         if not moves:
             return None
 
-        # 简单策略：随机选择
-        # TODO: 实现基于克制关系的智能选择
-        return random.choice(moves)
+        # 获取对手信息
+        opponent = self._get_main_opponent(character)
+        if opponent:
+            opponent_type = self._get_opponent_wuxue_type(opponent)
+            
+            # 基于克制关系选择
+            counter_move = self._select_counter_move(moves, opponent_type)
+            if counter_move:
+                return counter_move
+        
+        # 回退：选择伤害最高的招式 (TD-027)
+        return self._select_highest_damage_move(moves)
 
 
 class AggressiveAI(CombatAI):

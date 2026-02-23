@@ -105,6 +105,7 @@ class CombatSession:
         self.result: CombatResult | None = None
         self.winner: Character | None = None
         self.log: list[str] = []
+        self._last_update_time = time.time()  # 用于实时战斗结算 (TD-022)
 
         # 初始化参与者
         for char in participants:
@@ -165,8 +166,12 @@ class CombatSession:
                 await self.stop(result)
                 return
 
-            # BUFF结算（每秒）
-            # TODO: 优化为按实际时间结算
+            # BUFF结算（按实际时间）(TD-022)
+            current_time = time.time()
+            elapsed = current_time - self._last_update_time
+            if elapsed >= 1.0:  # 每秒结算一次
+                await self._process_buffs(elapsed)
+                self._last_update_time = current_time
 
             await asyncio.sleep(0.1)
 
@@ -279,9 +284,68 @@ class CombatSession:
     async def _do_cast(
         self, combatant: Combatant, args: dict
     ) -> tuple[bool, str]:
-        """执行施法（内功/特殊技能）."""
-        # TODO: 实现内功施法
-        return False, "内功系统待实现"
+        """执行施法（内功/特殊技能）(TD-023)."""
+        char = combatant.character
+        
+        # 获取要施放的内功
+        neigong_key = args.get("neigong")
+        if not neigong_key:
+            return False, "未指定内功"
+        
+        # 检查是否学会该内功
+        if not char.has_learned(neigong_key):
+            return False, "你尚未学会此内功"
+        
+        # 获取内功信息
+        from src.game.data.wuxue_registry import get_kungfu
+        neigong = get_kungfu(neigong_key)
+        if not neigong:
+            return False, "内功数据错误"
+        
+        # 检查内力消耗
+        mp_cost = args.get("mp_cost", 20)
+        if hasattr(char, 'mp') and char.mp < mp_cost:
+            return False, "内力不足"
+        
+        # 消耗内力
+        if hasattr(char, 'mp'):
+            char.mp -= mp_cost
+        
+        # 获取内功效果
+        effect = args.get("effect", "heal")
+        power = args.get("power", 50)
+        
+        # 应用内功效果
+        if effect == "heal":
+            # 治疗
+            if hasattr(char, 'hp'):
+                old_hp = char.hp
+                char.hp = min(char.max_hp, char.hp + power)
+                healed = char.hp - old_hp
+                combatant.set_cooldown(3.0)
+                return True, f"运功疗伤，恢复 {healed} 点气血"
+        
+        elif effect == "buff":
+            # 增益效果
+            buff_type = args.get("buff_type", "attack")
+            duration = args.get("duration", 10)
+            # 添加BUFF（简化实现）
+            combatant.set_cooldown(2.0)
+            return True, f"运起{neigong.name}，{buff_type}提升"
+        
+        elif effect == "attack":
+            # 内功攻击
+            target = self._get_target(combatant, args.get("target_id"))
+            if not target:
+                return False, "目标不存在"
+            
+            damage = power
+            if hasattr(target.character, 'hp'):
+                target.character.hp -= damage
+            combatant.set_cooldown(4.0)
+            return True, f"以{neigong.name}攻击，造成{damage}点伤害"
+        
+        return False, "未知内功效果"
 
     async def _do_flee(
         self, combatant: Combatant, args: dict
@@ -334,6 +398,32 @@ class CombatSession:
 
         combatant.set_cooldown(1.5)  # 防御冷却较短
         return True, "你摆出防御姿态，准备抵挡攻击。"
+
+    async def _process_buffs(self, elapsed: float) -> None:
+        """处理BUFF效果（按实际时间结算）(TD-022).
+        
+        Args:
+            elapsed: 经过的时间（秒）
+        """
+        for combatant in self.participants.values():
+            if not combatant.in_combat:
+                continue
+            
+            char = combatant.character
+            if hasattr(char, 'buff_manager'):
+                # 更新BUFF持续时间
+                await char.buff_manager.update(elapsed)
+                
+                # 处理持续效果（如中毒、回血）
+                for buff in char.buff_manager.active_buffs:
+                    if hasattr(buff, 'dot_damage') and buff.dot_damage:
+                        # 持续伤害
+                        if hasattr(char, 'hp'):
+                            char.hp -= buff.dot_damage * elapsed
+                    if hasattr(buff, 'hot_heal') and buff.hot_heal:
+                        # 持续治疗
+                        if hasattr(char, 'hp'):
+                            char.hp = min(char.max_hp, char.hp + buff.hot_heal * elapsed)
 
     async def _execute_action(
         self, combatant: Combatant, action: CombatAction

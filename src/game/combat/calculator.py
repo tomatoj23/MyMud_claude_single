@@ -88,12 +88,12 @@ class CombatCalculator:
         defense = defender.get_defense()
         damage_after_def = max(1, base_damage - defense * 0.5)
 
-        # 4. 招式克制加成
+        # 4. 招式克制加成 (TD-024)
         if move:
-            from src.game.typeclasses.wuxue import get_counter_modifier
+            from src.game.typeclasses.wuxue import get_counter_modifier, WuxueType
 
-            # TODO: 获取防御者当前使用的武学类型
-            defender_type = None
+            # 获取防御者当前使用的武学类型
+            defender_type = self._get_defender_wuxue_type(defender)
             counter_mod = get_counter_modifier(move.wuxue_type, defender_type)
             damage_after_counter = damage_after_def * counter_mod
 
@@ -148,11 +148,10 @@ class CombatCalculator:
         agility_diff = attacker.get_agility() - defender.get_agility()
         agility_mod = agility_diff * 0.005
 
-        # 招式修正（某些招式可能有命中加成）
+        # 招式修正（某些招式可能有命中加成）(TD-025)
         move_mod = 0.0
         if move:
-            # TODO: 从招式数据读取命中修正
-            move_mod = 0.0
+            move_mod = self._get_move_hit_modifier(move)
 
         hit_rate = base_hit + agility_mod + move_mod
 
@@ -205,6 +204,53 @@ class CombatCalculator:
             bonus["damage"] *= 1.1
 
         return bonus
+
+    def _get_defender_wuxue_type(self, defender) -> WuxueType | None:
+        """获取防御者当前使用的武学类型 (TD-024).
+        
+        Args:
+            defender: 防御者
+            
+        Returns:
+            武学类型或None
+        """
+        # 检查防御者是否有当前使用的武功
+        if hasattr(defender, 'current_wuxue'):
+            wuxue = defender.current_wuxue
+            if wuxue:
+                return wuxue.wuxue_type
+        
+        # 检查是否有默认武学类型
+        if hasattr(defender, 'default_wuxue_type'):
+            return defender.default_wuxue_type
+        
+        return None
+
+    def _get_move_hit_modifier(self, move) -> float:
+        """获取招式命中修正 (TD-025).
+        
+        Args:
+            move: 招式
+            
+        Returns:
+            命中修正值
+        """
+        if not move:
+            return 0.0
+        
+        # 从招式数据读取命中修正
+        if hasattr(move, 'hit_modifier'):
+            return move.hit_modifier
+        
+        # 根据武学类型默认修正
+        from src.game.typeclasses.wuxue import WuxueType
+        type_hit_bonus = {
+            WuxueType.ZHANG: 0.05,  # 掌法+5%命中
+            WuxueType.ZHI: 0.10,    # 指法+10%命中
+            WuxueType.QINGGONG: 0.15,  # 轻功+15%命中
+        }
+        
+        return type_hit_bonus.get(move.wuxue_type, 0.0)
 
 
 class CombatContext:
