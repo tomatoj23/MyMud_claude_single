@@ -666,7 +666,7 @@ class TestExecuteAction:
         
         await session._execute_action(combatant, action)
         
-        assert f"{enemy_char.key} 使用了物品" in session.log
+        assert f"{enemy_char.name} 使用了物品" in session.log
 
     @pytest.mark.asyncio
     async def test_execute_action_flee(self, mock_engine, enemy_char):

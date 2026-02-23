@@ -27,6 +27,30 @@ class Character(CharacterEquipmentMixin, CharacterWuxueMixin, TypeclassBase):
 
     typeclass_path = "src.game.typeclasses.character.Character"
 
+    # ===== 显示名称 =====
+    @property
+    def name(self) -> str:
+        """
+        角色显示名称.
+        
+        返回 attributes 中的 name，如果不存在或为空则返回 key。
+        这确保向后兼容：旧对象没有 name 时显示 key。
+        
+        Returns:
+            显示名称（name 或 key 回退）
+        """
+        return self.db.get("name") or self.key
+
+    @name.setter
+    def name(self, value: str) -> None:
+        """
+        设置角色显示名称.
+        
+        Args:
+            value: 显示名称
+        """
+        self.db.set("name", value)
+
     # ===== 先天资质（创建时随机，1-30，几乎不变） =====
     @property
     def birth_talents(self) -> dict[str, int]:

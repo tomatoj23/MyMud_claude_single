@@ -258,7 +258,7 @@ class CombatSession:
         if move:
             # 使用招式
             result = await self._execute_move(combatant.character, target, move)
-            msg = f"你对{target.key}使用「{move.name}」，" if result.is_hit else "你使用招式但未命中，"
+            msg = f"你对{target.name}使用「{move.name}」，" if result.is_hit else "你使用招式但未命中，"
             if result.damage > 0:
                 msg += f"造成 {int(result.damage)} 点伤害！"
             if result.is_crit:
@@ -268,7 +268,7 @@ class CombatSession:
             damage = self._calculate_normal_damage(combatant.character, target)
             target.modify_hp(-damage)
             result = type("obj", (object,), {"is_hit": True, "damage": damage, "is_crit": False})()
-            msg = f"你攻击{target.key}，造成 {damage} 点伤害！"
+            msg = f"你攻击{target.name}，造成 {damage} 点伤害！"
 
         # 设置冷却
         combatant.set_cooldown(cooldown)
@@ -342,7 +342,7 @@ class CombatSession:
         if action.type == "move":
             await self._execute_move_action(combatant, action)
         elif action.type == "item":
-            self._log(f"{combatant.character.key} 使用了物品")
+            self._log(f"{combatant.character.name} 使用了物品")
         elif action.type == "flee":
             await self._do_flee(combatant, {})
         elif action.type == "defend":
@@ -362,12 +362,12 @@ class CombatSession:
         result = await self._execute_move(combatant.character, target, move)
 
         if result.is_hit and result.damage > 0:
-            msg = f"{combatant.character.key} 使用「{move.name if move else '普通攻击'}」"
+            msg = f"{combatant.character.name} 使用「{move.name if move else '普通攻击'}」"
             if result.is_crit:
                 msg += " 暴击！"
-            msg += f" 对 {target.key} 造成 {int(result.damage)} 点伤害！"
+            msg += f" 对 {target.name} 造成 {int(result.damage)} 点伤害！"
         else:
-            msg = f"{combatant.character.key} 的攻击被 {target.key} 闪开了！"
+            msg = f"{combatant.character.name} 的攻击被 {target.name} 闪开了！"
 
         self._log(msg)
         combatant.set_cooldown(cooldown)
