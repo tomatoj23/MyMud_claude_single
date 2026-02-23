@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import Any, Callable
 from enum import Enum, auto
+import time
 import asyncio
 from collections import deque
 
@@ -54,7 +55,8 @@ class Message:
         self.msg_type = msg_type if isinstance(msg_type, MessageType) else MessageType(msg_type)
         self.content = content
         self.data = data or {}
-        self.timestamp = asyncio.get_event_loop().time()
+        # 使用标准时间戳，不依赖事件循环（避免RuntimeError）
+        self.timestamp = time.time()
     
     def __str__(self) -> str:
         return f"[{self.msg_type.value}] {self.content}"
