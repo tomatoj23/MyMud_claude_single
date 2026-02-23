@@ -70,8 +70,13 @@ class CommandHandler:
 
         logger.debug(f"注册了 {len(self.default_cmdset)} 个默认命令")
 
-    def get_cmdset(self, _caller: TypeclassBase) -> CmdSet:
+    def get_cmdset(self, caller: TypeclassBase) -> CmdSet:
         """获取调用者的可用命令集合.
+
+        动态合并来源:
+        1. 基础默认命令
+        2. 调用者位置（房间）的命令
+        3. 调用者自身的命令
 
         Args:
             caller: 调用者
@@ -81,9 +86,28 @@ class CommandHandler:
         """
         # 基础命令集合
         cmdset = self.default_cmdset
-
-        # TODO: 从调用者位置获取可用命令
-        # TODO: 从调用者自身获取可用命令
+        
+        # 从调用者位置获取可用命令
+        if hasattr(caller, "location") and caller.location:
+            location = caller.location
+            # 检查房间是否有本地命令
+            if hasattr(location, "get_local_cmds"):
+                local_cmds = location.get_local_cmds()
+                for cmd in local_cmds:
+                    cmdset.add(cmd)
+            # 检查房间是否有cmdset
+            elif hasattr(location, "cmdset"):
+                cmdset.merge(location.cmdset)
+        
+        # 从调用者自身获取可用命令
+        if hasattr(caller, "get_special_cmds"):
+            special_cmds = caller.get_special_cmds()
+            for cmd in special_cmds:
+                cmdset.add(cmd)
+        
+        # 检查调用者是否有cmdset属性
+        if hasattr(caller, "cmdset"):
+            cmdset.merge(caller.cmdset)
 
         return cmdset
 

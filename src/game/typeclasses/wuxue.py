@@ -294,8 +294,20 @@ class CharacterWuxueMixin:
 
     def get_available_moves(self) -> list[tuple[Kungfu, Move]]:
         """获取所有可用招式."""
+        from src.game.data.wuxue_registry import get_kungfu
+        
         available: list[tuple[Kungfu, Move]] = []
-        # TODO: 通过kungfu_key获取Kungfu对象
+        learned = self.learned_wuxue
+        
+        for kungfu_key, kungfu_data in learned.items():
+            kungfu = get_kungfu(kungfu_key)
+            if kungfu:
+                # 获取该武功的所有招式
+                for move_key in kungfu_data.get("moves", {}).keys():
+                    move = kungfu.get_move(move_key)
+                    if move:
+                        available.append((kungfu, move))
+        
         return available
 
     def get_move_mastery(self, kungfu_key: str, move_key: str) -> int:

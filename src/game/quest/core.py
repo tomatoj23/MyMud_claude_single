@@ -343,13 +343,39 @@ class CharacterQuestMixin:
 
         # 物品奖励
         if "items" in rewards:
-            # TODO: 实现物品发放
-            msgs.append("获得物品")
+            item_rewards = rewards["items"]
+            if isinstance(item_rewards, dict):
+                item_rewards = [item_rewards]
+            
+            for item_reward in item_rewards:
+                item_key = item_reward.get("key")
+                quantity = item_reward.get("quantity", 1)
+                item_name = item_reward.get("name", item_key)
+                
+                # 尝试创建物品并添加到背包
+                try:
+                    created = await self._create_item(item_key, quantity)
+                    if created:
+                        msgs.append(f"获得 {item_name} x{quantity}")
+                    else:
+                        msgs.append(f"获得 {item_name}")
+                except Exception as e:
+                    msgs.append(f"获得 {item_name}（但背包已满）")
 
         # 武学奖励
         if "wuxue" in rewards:
-            # TODO: 实现武学奖励
-            msgs.append("领悟武学")
+            wuxue_key = rewards["wuxue"]
+            
+            # 使用武学注册表获取武功
+            from src.game.data.wuxue_registry import get_kungfu
+            kungfu = get_kungfu(wuxue_key)
+            
+            if kungfu:
+                # 学习武功
+                success, msg = await self.learn_wuxue(kungfu)
+                msgs.append(msg if msg else f"领悟「{kungfu.name}」")
+            else:
+                msgs.append(f"领悟武学（武功数据缺失）")
 
         # 声望奖励
         if "reputation" in rewards:
@@ -359,6 +385,36 @@ class CharacterQuestMixin:
             msgs.append(f"声望 +{rep}")
 
         return " ".join(msgs) if msgs else ""
+
+    async def _create_item(self, item_key: str, quantity: int = 1) -> bool:
+        """创建物品并放入角色背包.
+        
+        Args:
+            item_key: 物品key
+            quantity: 数量
+            
+        Returns:
+            是否成功创建
+        """
+        try:
+            # 获取对象管理器
+            from src.engine.objects.manager import ObjectManager
+            manager = ObjectManager()
+            
+            # 创建物品
+            for _ in range(quantity):
+                item = await manager.create(
+                    key=item_key,
+                    typeclass_path="src.game.typeclasses.item.Item"
+                )
+                if item:
+                    # 移动到角色位置（背包）
+                    item.location = self
+            
+            return True
+        except Exception:
+            # 创建失败（如背包已满）
+            return False
 
     # ===== 查询方法 =====
 

@@ -69,9 +69,14 @@ class Command:
     def __repr__(self) -> str:  # noqa: D105
         return self.__str__()
 
-    def has_perm(self, _caller: TypeclassBase) -> bool:
+    def has_perm(self, caller: TypeclassBase) -> bool:
         """检查调用者是否有权限执行此命令.
 
+        支持权限锁:
+        - perm:<权限名>  (如 perm:admin, perm:builder)
+        - attr:<属性>:<op>:<值>  (如 attr:level:>=:30)
+        - menpai:<门派名>  (如 menpai:少林)
+        
         Args:
             caller: 调用者
 
@@ -81,10 +86,22 @@ class Command:
         # 简化实现：空锁表示无限制
         if not self.locks:
             return True
-
-        # TODO: 实现完整的锁检查逻辑
-        # 阶段六实现完整权限系统
-        return True
+        
+        # 解析锁字符串
+        from src.utils.lock_parser import ExitLockParser, LockError
+        
+        try:
+            condition = ExitLockParser.parse(self.locks)
+            if condition is None:
+                return True
+            
+            # 使用锁条件检查调用者
+            passed, _ = condition.check(caller)
+            return passed
+            
+        except LockError:
+            # 锁语法错误，默认允许
+            return True
 
     def parse(self) -> bool:
         """解析命令参数.
