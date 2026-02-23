@@ -28,6 +28,7 @@
 | [架构概述](./architecture/overview.md) | 系统架构、设计模式、模块依赖 |
 | [数据流文档](./architecture/data_flow.md) | 玩家输入、对象创建、战斗流程等数据流 |
 | [技术债务分析](./architecture/tech_debt_analysis.md) | 代码质量分析、债务跟踪、改进建议 |
+| [name属性迁移规划](./architecture/name_attribute_migration_plan.md) | 为Character添加name属性的详细规划 |
 
 ### 其他文档
 
