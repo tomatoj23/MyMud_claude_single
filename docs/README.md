@@ -29,6 +29,7 @@
 | [数据流文档](./architecture/data_flow.md) | 玩家输入、对象创建、战斗流程等数据流 |
 | [技术债务分析](./architecture/tech_debt_analysis.md) | 代码质量分析、债务跟踪、改进建议 |
 | [name属性迁移规划](./architecture/name_attribute_migration_plan.md) | 为Character添加name属性的详细规划 |
+| [迁移路线图A→B](./architecture/migration_roadmap_a_to_b.md) | 方案A到方案B的渐进式过渡路线图 |
 
 ### 其他文档
 
