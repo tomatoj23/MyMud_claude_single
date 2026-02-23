@@ -206,6 +206,26 @@ feat: 阶段5完成 - Item添加name属性，NPC已继承无需修改
 **计划时间**: 2小时  
 **实际时间**: 完成
 
+### 新增集成测试
+
+创建了 `tests/integration/test_name_attribute_integration.py`，包含39个集成测试：
+
+| 测试类 | 测试数量 | 覆盖内容 |
+|:---|:---:|:---|
+| TestNameAttributeBasic | 9 | 所有类型class的name基础功能 |
+| TestNameAttributePersistence | 6 | name持久化和回退逻辑 |
+| TestDisplayIntegration | 3 | 房间/物品/装备描述显示 |
+| TestRoomContentsDisplay | 2 | 房间内容显示 |
+| TestCrossModuleIntegration | 3 | 跨模块消息格式化 |
+| TestExitDisplay | 1 | 出口name属性 |
+| TestNameWithSpecialCharacters | 3 | 中文/空格/长name |
+| TestNameIndependence | 3 | name与key独立性 |
+| TestNameEdgeCases | 3 | 特殊字符/Unicode/空白处理 |
+| TestNPCNameIntegration | 2 | NPC name与类型组合 |
+| TestCombatNameIntegration | 4 | 战斗消息name显示 |
+
+**集成测试结果**: 39/39 ✅ 通过
+
 ### 最终测试报告
 
 | 测试套件 | 通过 | 失败 | 状态 |
