@@ -1,0 +1,11 @@
+# Kimi Code CLI 配置文件
+
+# 额外技能路径
+skill_paths:
+  - ./.agents/skills
+
+# 默认Agent
+default_agents:
+  - mud_architect
+  - mud_coder
+  - mud_reviewer

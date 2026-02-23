@@ -1,0 +1,1023 @@
+"""Combat Core 覆盖率补充测试 - 针对 src/game/combat/core.py.
+
+覆盖缺失的行：151-156, 160-171, 175-187, 191-194, 217-237, 243-277, 284, 
+291-315, 322-336, 342-349, 355-373, 379-387, 393-398, 432
+"""
+
+import asyncio
+import time
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import pytest
+
+from src.game.combat.core import CombatAction, Combatant, CombatResult, CombatSession
+
+
+class TestCombatSessionStopResults:
+    """测试 stop() 方法的各种结果日志 (151-156)."""
+
+    @pytest.fixture
+    def mock_engine(self):
+        return Mock()
+
+    @pytest.fixture
+    def player_char(self):
+        char = Mock()
+        char.id = 1
+        char.name = "玩家"
+        char.get_hp.return_value = (100, 100)
+        return char
+
+    @pytest.fixture
+    def enemy_char(self):
+        char = Mock()
+        char.id = 2
+        char.name = "敌人"
+        char.get_hp.return_value = (80, 80)
+        return char
+
+    @pytest.mark.asyncio
+    async def test_stop_with_lose_result(self, mock_engine, player_char, enemy_char):
+        """测试停止战斗并记录失败日志 (151-152)."""
+        session = CombatSession(mock_engine, [player_char, enemy_char])
+        session._loop_task = None
+        
+        await session.stop(CombatResult.LOSE)
+        
+        assert session.result == CombatResult.LOSE
+        assert "战斗失败！" in session.log
+
+    @pytest.mark.asyncio
+    async def test_stop_with_flee_result(self, mock_engine, player_char, enemy_char):
+        """测试停止战斗并记录逃跑日志 (153-154)."""
+        session = CombatSession(mock_engine, [player_char, enemy_char])
+        session._loop_task = None
+        
+        await session.stop(CombatResult.FLEE)
+        
+        assert session.result == CombatResult.FLEE
+        assert "成功逃跑！" in session.log
+
+    @pytest.mark.asyncio
+    async def test_stop_with_draw_result(self, mock_engine, player_char, enemy_char):
+        """测试停止战斗并记录平局日志 (155-156)."""
+        session = CombatSession(mock_engine, [player_char, enemy_char])
+        session._loop_task = None
+        
+        await session.stop(CombatResult.DRAW)
+        
+        assert session.result == CombatResult.DRAW
+        assert "战斗平局！" in session.log
+
+
+class TestCombatLoop:
+    """测试战斗主循环 _combat_loop (160-171)."""
+
+    @pytest.fixture
+    def mock_engine(self):
+        return Mock()
+
+    @pytest.fixture
+    def player_char(self):
+        char = Mock()
+        char.id = 1
+        char.name = "玩家"
+        char.get_hp.return_value = (100, 100)
+        return char
+
+    @pytest.fixture
+    def enemy_char(self):
+        char = Mock()
+        char.id = 2
+        char.name = "敌人"
+        char.get_hp.return_value = (80, 80)
+        return char
+
+    @pytest.mark.asyncio
+    async def test_combat_loop_processes_ai_and_checks_end(self, mock_engine, player_char, enemy_char):
+        """测试战斗循环处理AI回合并检查结束 (160-171)."""
+        session = CombatSession(mock_engine, [player_char, enemy_char])
+        session.active = True  # 需要设置为 True 才能进入循环
+        
+        # 第一次循环 _process_ai_turns 被调用，第二次循环 _check_end 返回结果
+        ai_call_count = [0]
+        async def mock_process_ai():
+            ai_call_count[0] += 1
+        
+        check_count = [0]
+        async def mock_check_end():
+            check_count[0] += 1
+            if check_count[0] >= 2:  # 第二次检查时结束战斗
+                return CombatResult.WIN
+            return None
+        
+        with patch.object(session, '_process_ai_turns', side_effect=mock_process_ai):
+            with patch.object(session, '_check_end', side_effect=mock_check_end):
+                with patch('asyncio.sleep', new_callable=AsyncMock):
+                    # 运行战斗循环，应该很快结束
+                    await session._combat_loop()
+                    
+                    assert session.active is False
+                    # _check_end 被调用两次以上
+                    assert check_count[0] >= 2
+
+
+class TestProcessAiTurns:
+    """测试 AI 回合处理 _process_ai_turns (175-187)."""
+
+    @pytest.fixture
+    def mock_engine(self):
+        return Mock()
+
+    @pytest.fixture
+    def player_char(self):
+        char = Mock()
+        char.id = 1
+        char.name = "玩家"
+        char.get_hp.return_value = (100, 100)
+        return char
+
+    @pytest.fixture
+    def enemy_char(self):
+        char = Mock()
+        char.id = 2
+        char.name = "敌人"
+        char.get_hp.return_value = (80, 80)
+        return char
+
+    @pytest.mark.asyncio
+    async def test_process_ai_turns_skips_player(self, mock_engine, enemy_char):
+        """测试 AI 回合处理跳过玩家 (178-179)."""
+        # 创建一个没有玩家的战斗
+        session = CombatSession(mock_engine, [enemy_char])
+        session.participants[2].is_player = False
+        session.participants[2].in_combat = True
+        
+        # 模拟 AI 已经准备好行动
+        session.participants[2].next_action_time = 0
+        
+        with patch.object(session, '_ai_decide', new_callable=AsyncMock) as mock_decide:
+            with patch.object(session, '_execute_action', new_callable=AsyncMock) as mock_execute:
+                with patch.object(session, '_can_fight', return_value=True):
+                    await session._process_ai_turns()
+                    
+                    # 非玩家应该被处理
+                    mock_decide.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_process_ai_turns_skips_not_in_combat(self, mock_engine, enemy_char):
+        """测试 AI 回合处理跳过不在战斗中的角色 (181-182)."""
+        session = CombatSession(mock_engine, [enemy_char])
+        session.participants[2].is_player = False
+        session.participants[2].in_combat = False  # 不在战斗中
+        
+        with patch.object(session, '_ai_decide', new_callable=AsyncMock) as mock_decide:
+            await session._process_ai_turns()
+            
+            # 不应该调用 AI 决策
+            mock_decide.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_process_ai_turns_skips_not_ready(self, mock_engine, enemy_char):
+        """测试 AI 回合处理跳过未准备好的角色 (184-187)."""
+        session = CombatSession(mock_engine, [enemy_char])
+        session.participants[2].is_player = False
+        session.participants[2].in_combat = True
+        # 设置冷却时间到未来
+        session.participants[2].next_action_time = time.time() + 100
+        
+        with patch.object(session, '_ai_decide', new_callable=AsyncMock) as mock_decide:
+            with patch.object(session, '_can_fight', return_value=True):
+                await session._process_ai_turns()
+                
+                # 不应该调用 AI 决策，因为还没准备好
+                mock_decide.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_process_ai_turns_when_ready(self, mock_engine, enemy_char):
+        """测试 AI 回合处理当角色准备好时执行行动 (184-187)."""
+        session = CombatSession(mock_engine, [enemy_char])
+        session.participants[2].is_player = False
+        session.participants[2].in_combat = True
+        session.participants[2].next_action_time = 0  # 已经准备好
+        
+        action = CombatAction("defend")
+        
+        with patch.object(session, '_ai_decide', new_callable=AsyncMock, return_value=action) as mock_decide:
+            with patch.object(session, '_execute_action', new_callable=AsyncMock) as mock_execute:
+                with patch.object(session, '_can_fight', return_value=True):
+                    await session._process_ai_turns()
+                    
+                    # 应该调用 AI 决策和执行行动
+                    mock_decide.assert_called_once()
+                    mock_execute.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_process_ai_turns_skips_player_continue(self, mock_engine, player_char, enemy_char):
+        """测试 AI 回合处理跳过玩家（覆盖第 179 行 continue）."""
+        # 创建包含玩家和敌人的会话
+        session = CombatSession(mock_engine, [player_char, enemy_char], player_char)
+        session.participants[1].is_player = True  # 玩家
+        session.participants[1].in_combat = True
+        session.participants[1].next_action_time = 0  # 已准备好
+        
+        session.participants[2].is_player = False  # 敌人
+        session.participants[2].in_combat = True
+        session.participants[2].next_action_time = time.time() + 100  # 未准备好
+        
+        with patch.object(session, '_ai_decide', new_callable=AsyncMock) as mock_decide:
+            with patch.object(session, '_can_fight', return_value=True):
+                await session._process_ai_turns()
+                
+                # 玩家被跳过，敌人未准备好，所以不应该调用 _ai_decide
+                mock_decide.assert_not_called()
+
+
+class TestAiDecide:
+    """测试 AI 决策方法 _ai_decide (191-194)."""
+
+    @pytest.fixture
+    def mock_engine(self):
+        return Mock()
+
+    @pytest.fixture
+    def enemy_char(self):
+        char = Mock()
+        char.id = 2
+        char.name = "敌人"
+        char.get_hp.return_value = (80, 80)
+        return char
+
+    @pytest.mark.asyncio
+    async def test_ai_decide_returns_action(self, mock_engine, enemy_char):
+        """测试 AI 决策返回行动 (191-194)."""
+        from src.game.combat.ai import CombatAI
+        
+        session = CombatSession(mock_engine, [enemy_char])
+        combatant = session.participants[2]
+        
+        # 模拟 CombatAI.decide 返回一个动作
+        mock_action = CombatAction("defend")
+        
+        with patch('src.game.combat.ai.CombatAI.decide', new_callable=AsyncMock, return_value=mock_action):
+            result = await session._ai_decide(combatant)
+            
+            assert result == mock_action
+
+
+class TestHandlePlayerCommand:
+    """测试玩家命令处理 handle_player_command (217-237)."""
+
+    @pytest.fixture
+    def mock_engine(self):
+        return Mock()
+
+    @pytest.fixture
+    def player_char(self):
+        char = Mock()
+        char.id = 1
+        char.name = "玩家"
+        char.get_hp.return_value = (100, 100)
+        return char
+
+    @pytest.fixture
+    def enemy_char(self):
+        char = Mock()
+        char.id = 2
+        char.name = "敌人"
+        char.get_hp.return_value = (80, 80)
+        return char
+
+    @pytest.mark.asyncio
+    async def test_handle_command_not_in_combat(self, mock_engine, player_char, enemy_char):
+        """测试处理不在战斗中的角色的命令 (220-221)."""
+        session = CombatSession(mock_engine, [player_char, enemy_char])
+        # participant 不在战斗中
+        session.participants[1].in_combat = False
+        
+        success, msg = await session.handle_player_command(player_char, "kill", {})
+        
+        assert success is False
+        assert "你不在战斗中" in msg
+
+    @pytest.mark.asyncio
+    async def test_handle_command_not_ready(self, mock_engine, player_char, enemy_char):
+        """测试处理未准备好的角色的命令 (223-225)."""
+        session = CombatSession(mock_engine, [player_char, enemy_char])
+        session.participants[1].in_combat = True
+        # 设置冷却
+        session.participants[1].next_action_time = time.time() + 100
+        
+        success, msg = await session.handle_player_command(player_char, "kill", {})
+        
+        assert success is False
+        assert "你还不能行动" in msg
+
+    @pytest.mark.asyncio
+    async def test_handle_command_kill(self, mock_engine, player_char, enemy_char):
+        """测试处理 kill 命令 (228-229)."""
+        session = CombatSession(mock_engine, [player_char, enemy_char], player_char)
+        session.participants[1].in_combat = True
+        session.participants[1].next_action_time = 0
+        
+        with patch.object(session, '_do_attack', new_callable=AsyncMock, return_value=(True, "攻击成功")) as mock_attack:
+            success, msg = await session.handle_player_command(player_char, "kill", {"target": enemy_char})
+            
+            mock_attack.assert_called_once()
+            assert success is True
+
+    @pytest.mark.asyncio
+    async def test_handle_command_cast(self, mock_engine, player_char, enemy_char):
+        """测试处理 cast 命令 (230-231)."""
+        session = CombatSession(mock_engine, [player_char, enemy_char], player_char)
+        session.participants[1].in_combat = True
+        session.participants[1].next_action_time = 0
+        
+        with patch.object(session, '_do_cast', new_callable=AsyncMock, return_value=(True, "施法成功")) as mock_cast:
+            success, msg = await session.handle_player_command(player_char, "cast", {})
+            
+            mock_cast.assert_called_once()
+            assert success is True
+
+    @pytest.mark.asyncio
+    async def test_handle_command_flee(self, mock_engine, player_char, enemy_char):
+        """测试处理 flee 命令 (232-233)."""
+        session = CombatSession(mock_engine, [player_char, enemy_char], player_char)
+        session.participants[1].in_combat = True
+        session.participants[1].next_action_time = 0
+        
+        with patch.object(session, '_do_flee', new_callable=AsyncMock, return_value=(True, "逃跑成功")) as mock_flee:
+            success, msg = await session.handle_player_command(player_char, "flee", {})
+            
+            mock_flee.assert_called_once()
+            assert success is True
+
+    @pytest.mark.asyncio
+    async def test_handle_command_defend(self, mock_engine, player_char, enemy_char):
+        """测试处理 defend 命令 (234-235)."""
+        session = CombatSession(mock_engine, [player_char, enemy_char], player_char)
+        session.participants[1].in_combat = True
+        session.participants[1].next_action_time = 0
+        
+        with patch.object(session, '_do_defend', new_callable=AsyncMock, return_value=(True, "防御成功")) as mock_defend:
+            success, msg = await session.handle_player_command(player_char, "defend", {})
+            
+            mock_defend.assert_called_once()
+            assert success is True
+
+    @pytest.mark.asyncio
+    async def test_handle_command_unknown(self, mock_engine, player_char, enemy_char):
+        """测试处理未知命令 (237)."""
+        session = CombatSession(mock_engine, [player_char, enemy_char], player_char)
+        session.participants[1].in_combat = True
+        session.participants[1].next_action_time = 0
+        
+        success, msg = await session.handle_player_command(player_char, "unknown_cmd", {})
+        
+        assert success is False
+        assert "未知的战斗命令" in msg
+
+
+class TestDoAttack:
+    """测试攻击处理 _do_attack (243-277)."""
+
+    @pytest.fixture
+    def mock_engine(self):
+        return Mock()
+
+    @pytest.fixture
+    def player_char(self):
+        char = Mock()
+        char.id = 1
+        char.name = "玩家"
+        char.get_hp.return_value = (100, 100)
+        char.get_agility.return_value = 20
+        char.get_attack.return_value = 50
+        return char
+
+    @pytest.fixture
+    def enemy_char(self):
+        char = Mock()
+        char.id = 2
+        char.name = "敌人"
+        char.get_hp.return_value = (80, 80)
+        char.get_defense.return_value = 30
+        return char
+
+    @pytest.mark.asyncio
+    async def test_do_attack_no_target(self, mock_engine, player_char):
+        """测试攻击但没有指定目标 (246-247)."""
+        session = CombatSession(mock_engine, [player_char], player_char)
+        combatant = session.participants[1]
+        
+        success, msg = await session._do_attack(combatant, {})
+        
+        assert success is False
+        assert "请指定攻击目标" in msg
+
+    @pytest.mark.asyncio
+    async def test_do_attack_target_not_in_combat(self, mock_engine, player_char, enemy_char):
+        """测试攻击不在战斗中的目标 (250-252)."""
+        session = CombatSession(mock_engine, [player_char, enemy_char], player_char)
+        combatant = session.participants[1]
+        session.participants[2].in_combat = False
+        
+        success, msg = await session._do_attack(combatant, {"target": enemy_char})
+        
+        assert success is False
+        assert "目标不在战斗中" in msg
+
+    @pytest.mark.asyncio
+    async def test_do_attack_with_move_hit(self, mock_engine, player_char, enemy_char):
+        """测试使用招式攻击命中 (258-265)."""
+        session = CombatSession(mock_engine, [player_char, enemy_char], player_char)
+        combatant = session.participants[1]
+        session.participants[2].in_combat = True
+        
+        move = Mock()
+        move.name = "测试招式"
+        move.cooldown = 2.0
+        
+        result = Mock()
+        result.is_hit = True
+        result.damage = 50
+        result.is_crit = True
+        
+        with patch.object(session, '_execute_move', new_callable=AsyncMock, return_value=result):
+            success, msg = await session._do_attack(combatant, {"target": enemy_char, "move": move})
+            
+            assert success is True
+            assert "测试招式" in msg
+            assert "50" in msg
+            assert "暴击" in msg
+
+    @pytest.mark.asyncio
+    async def test_do_attack_with_move_miss(self, mock_engine, player_char, enemy_char):
+        """测试使用招式攻击未命中 (258-265)."""
+        session = CombatSession(mock_engine, [player_char, enemy_char], player_char)
+        combatant = session.participants[1]
+        session.participants[2].in_combat = True
+        
+        move = Mock()
+        move.name = "测试招式"
+        move.cooldown = 2.0
+        
+        result = Mock()
+        result.is_hit = False
+        result.damage = 0
+        result.is_crit = False
+        
+        with patch.object(session, '_execute_move', new_callable=AsyncMock, return_value=result):
+            success, msg = await session._do_attack(combatant, {"target": enemy_char, "move": move})
+            
+            assert success is True
+            assert "未命中" in msg
+
+    @pytest.mark.asyncio
+    async def test_do_attack_normal(self, mock_engine, player_char, enemy_char):
+        """测试普通攻击 (266-271)."""
+        session = CombatSession(mock_engine, [player_char, enemy_char], player_char)
+        combatant = session.participants[1]
+        session.participants[2].in_combat = True
+        
+        with patch.object(session, '_calculate_normal_damage', return_value=25):
+            success, msg = await session._do_attack(combatant, {"target": enemy_char})
+            
+            assert success is True
+            assert "攻击" in msg
+            assert "25" in msg
+            enemy_char.modify_hp.assert_called_once()
+
+
+class TestDoCast:
+    """测试施法处理 _do_cast (284)."""
+
+    @pytest.fixture
+    def mock_engine(self):
+        return Mock()
+
+    @pytest.fixture
+    def player_char(self):
+        char = Mock()
+        char.id = 1
+        char.name = "玩家"
+        char.get_hp.return_value = (100, 100)
+        return char
+
+    @pytest.mark.asyncio
+    async def test_do_cast_not_implemented(self, mock_engine, player_char):
+        """测试施法功能待实现 (284)."""
+        session = CombatSession(mock_engine, [player_char], player_char)
+        combatant = session.participants[1]
+        
+        success, msg = await session._do_cast(combatant, {})
+        
+        assert success is False
+        assert "内功系统待实现" in msg
+
+
+class TestDoFlee:
+    """测试逃跑处理 _do_flee (291-315)."""
+
+    @pytest.fixture
+    def mock_engine(self):
+        return Mock()
+
+    @pytest.fixture
+    def player_char(self):
+        char = Mock()
+        char.id = 1
+        char.name = "玩家"
+        char.get_hp.return_value = (100, 100)
+        char.get_agility.return_value = 20
+        return char
+
+    @pytest.fixture
+    def enemy_char(self):
+        char = Mock()
+        char.id = 2
+        char.name = "敌人"
+        char.get_hp.return_value = (80, 80)
+        char.get_agility.return_value = 15
+        return char
+
+    @pytest.mark.asyncio
+    async def test_do_flee_no_enemies(self, mock_engine, player_char):
+        """测试逃跑但没有敌人 (296-299)."""
+        # 只创建玩家，没有敌人
+        session = CombatSession(mock_engine, [player_char], player_char)
+        combatant = session.participants[1]
+        
+        success, msg = await session._do_flee(combatant, {})
+        
+        assert success is False
+        assert "没有敌人" in msg
+
+    @pytest.mark.asyncio
+    async def test_do_flee_success(self, mock_engine, player_char, enemy_char):
+        """测试逃跑成功 (309-312)."""
+        session = CombatSession(mock_engine, [player_char, enemy_char], player_char)
+        combatant = session.participants[1]
+        session.participants[2].in_combat = True
+        
+        with patch('random.random', return_value=0.1):  # 低随机值确保成功
+            success, msg = await session._do_flee(combatant, {})
+            
+            assert success is True
+            assert "成功逃跑" in msg
+            assert session.result == CombatResult.FLEE
+
+    @pytest.mark.asyncio
+    async def test_do_flee_failure(self, mock_engine, player_char, enemy_char):
+        """测试逃跑失败 (313-315)."""
+        session = CombatSession(mock_engine, [player_char, enemy_char], player_char)
+        combatant = session.participants[1]
+        session.participants[2].in_combat = True
+        
+        with patch('random.random', return_value=0.9):  # 高随机值确保失败
+            success, msg = await session._do_flee(combatant, {})
+            
+            assert success is True  # 命令执行成功，只是逃跑失败
+            assert "逃跑失败" in msg
+
+
+class TestDoDefend:
+    """测试防御处理 _do_defend (322-336)."""
+
+    @pytest.fixture
+    def mock_engine(self):
+        return Mock()
+
+    @pytest.fixture
+    def player_char(self):
+        char = Mock()
+        char.id = 1
+        char.name = "玩家"
+        char.get_hp.return_value = (100, 100)
+        char.buff_manager = AsyncMock()
+        return char
+
+    @pytest.mark.asyncio
+    async def test_do_defend_with_buff_manager(self, mock_engine, player_char):
+        """测试防御添加BUFF (322-336)."""
+        session = CombatSession(mock_engine, [player_char], player_char)
+        combatant = session.participants[1]
+        
+        success, msg = await session._do_defend(combatant, {})
+        
+        assert success is True
+        assert "防御姿态" in msg
+        # 验证 buff_manager.add 被调用
+        player_char.buff_manager.add.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_do_defend_without_buff_manager(self, mock_engine, player_char):
+        """测试防御但角色没有buff_manager (332-334)."""
+        player_char_no_buff = Mock()
+        player_char_no_buff.id = 1
+        player_char_no_buff.name = "玩家"
+        player_char_no_buff.get_hp.return_value = (100, 100)
+        # 没有 buff_manager 属性
+        del player_char_no_buff.buff_manager
+        
+        session = CombatSession(mock_engine, [player_char_no_buff], player_char_no_buff)
+        combatant = session.participants[1]
+        
+        success, msg = await session._do_defend(combatant, {})
+        
+        assert success is True
+        assert "防御姿态" in msg
+
+
+class TestExecuteAction:
+    """测试执行行动 _execute_action (342-349)."""
+
+    @pytest.fixture
+    def mock_engine(self):
+        return Mock()
+
+    @pytest.fixture
+    def enemy_char(self):
+        char = Mock()
+        char.id = 2
+        char.name = "敌人"
+        char.get_hp.return_value = (80, 80)
+        return char
+
+    @pytest.mark.asyncio
+    async def test_execute_action_move(self, mock_engine, enemy_char):
+        """测试执行招式行动 (342-343)."""
+        session = CombatSession(mock_engine, [enemy_char])
+        combatant = session.participants[2]
+        
+        action = CombatAction("move", target=enemy_char, data={"move": Mock()})
+        
+        with patch.object(session, '_execute_move_action', new_callable=AsyncMock) as mock_move:
+            await session._execute_action(combatant, action)
+            mock_move.assert_called_once_with(combatant, action)
+
+    @pytest.mark.asyncio
+    async def test_execute_action_item(self, mock_engine, enemy_char):
+        """测试执行物品行动 (344-345)."""
+        session = CombatSession(mock_engine, [enemy_char])
+        combatant = session.participants[2]
+        
+        action = CombatAction("item")
+        
+        await session._execute_action(combatant, action)
+        
+        assert f"{enemy_char.key} 使用了物品" in session.log
+
+    @pytest.mark.asyncio
+    async def test_execute_action_flee(self, mock_engine, enemy_char):
+        """测试执行逃跑行动 (346-347)."""
+        session = CombatSession(mock_engine, [enemy_char])
+        combatant = session.participants[2]
+        
+        action = CombatAction("flee")
+        
+        with patch.object(session, '_do_flee', new_callable=AsyncMock) as mock_flee:
+            await session._execute_action(combatant, action)
+            mock_flee.assert_called_once_with(combatant, {})
+
+    @pytest.mark.asyncio
+    async def test_execute_action_defend(self, mock_engine, enemy_char):
+        """测试执行防御行动 (348-349)."""
+        session = CombatSession(mock_engine, [enemy_char])
+        combatant = session.participants[2]
+        
+        action = CombatAction("defend")
+        
+        with patch.object(session, '_do_defend', new_callable=AsyncMock) as mock_defend:
+            await session._execute_action(combatant, action)
+            mock_defend.assert_called_once_with(combatant, {})
+
+
+class TestExecuteMoveAction:
+    """测试执行招式攻击 _execute_move_action (355-373)."""
+
+    @pytest.fixture
+    def mock_engine(self):
+        return Mock()
+
+    @pytest.fixture
+    def enemy_char(self):
+        char = Mock()
+        char.id = 2
+        char.name = "敌人"
+        char.get_hp.return_value = (80, 80)
+        return char
+
+    @pytest.mark.asyncio
+    async def test_execute_move_action_no_target(self, mock_engine, enemy_char):
+        """测试执行招式但没有目标 (358-359)."""
+        session = CombatSession(mock_engine, [enemy_char])
+        combatant = session.participants[2]
+        
+        action = CombatAction("move", target=None, data={"move": Mock()})
+        
+        await session._execute_move_action(combatant, action)
+        
+        # 没有目标应该直接返回，不记录日志
+        assert len(session.log) == 0
+
+    @pytest.mark.asyncio
+    async def test_execute_move_action_hit_with_crit(self, mock_engine, enemy_char):
+        """测试执行招式命中并暴击 (364-368)."""
+        session = CombatSession(mock_engine, [enemy_char])
+        combatant = session.participants[2]
+        
+        move = Mock()
+        move.name = "测试招式"
+        move.cooldown = 2.0
+        
+        action = CombatAction("move", target=enemy_char, data={"move": move})
+        
+        result = Mock()
+        result.is_hit = True
+        result.damage = 100
+        result.is_crit = True
+        
+        with patch.object(session, '_execute_move', new_callable=AsyncMock, return_value=result):
+            with patch.object(session, '_calculate_cooldown', return_value=2.0):
+                await session._execute_move_action(combatant, action)
+                
+                assert "暴击" in session.log[-1]
+                assert "100" in session.log[-1]
+
+    @pytest.mark.asyncio
+    async def test_execute_move_action_miss(self, mock_engine, enemy_char):
+        """测试执行招式未命中 (369-372)."""
+        session = CombatSession(mock_engine, [enemy_char])
+        combatant = session.participants[2]
+        
+        move = Mock()
+        move.name = "测试招式"
+        
+        action = CombatAction("move", target=enemy_char, data={"move": move})
+        
+        result = Mock()
+        result.is_hit = False
+        result.damage = 0
+        result.is_crit = False
+        
+        with patch.object(session, '_execute_move', new_callable=AsyncMock, return_value=result):
+            with patch.object(session, '_calculate_cooldown', return_value=2.0):
+                await session._execute_move_action(combatant, action)
+                
+                assert "闪开" in session.log[-1]
+
+
+class TestExecuteMove:
+    """测试执行招式 _execute_move (379-387)."""
+
+    @pytest.fixture
+    def mock_engine(self):
+        return Mock()
+
+    @pytest.fixture
+    def player_char(self):
+        char = Mock()
+        char.id = 1
+        char.name = "玩家"
+        char.get_hp.return_value = (100, 100)
+        return char
+
+    @pytest.fixture
+    def enemy_char(self):
+        char = Mock()
+        char.id = 2
+        char.name = "敌人"
+        char.get_hp.return_value = (80, 80)
+        return char
+
+    @pytest.mark.asyncio
+    async def test_execute_move_hit(self, mock_engine, player_char, enemy_char):
+        """测试执行招式命中并造成伤害 (379-387)."""
+        session = CombatSession(mock_engine, [player_char, enemy_char], player_char)
+        
+        move = Mock()
+        
+        # 使用真实的 calculator 但 mock calculate_damage 方法
+        from src.game.combat.calculator import CombatCalculator, DamageResult
+        
+        result = DamageResult(damage=50, is_hit=True, is_crit=False)
+        
+        with patch.object(CombatCalculator, 'calculate_damage', return_value=result):
+            returned_result = await session._execute_move(player_char, enemy_char, move)
+            
+            assert returned_result.damage == 50
+            enemy_char.modify_hp.assert_called_once_with(-50)
+
+    @pytest.mark.asyncio
+    async def test_execute_move_no_damage(self, mock_engine, player_char, enemy_char):
+        """测试执行招式命中但没有伤害 (384-387)."""
+        session = CombatSession(mock_engine, [player_char, enemy_char], player_char)
+        
+        move = Mock()
+        
+        from src.game.combat.calculator import CombatCalculator, DamageResult
+        
+        result = DamageResult(damage=0, is_hit=True, is_crit=False)  # 无伤害
+        
+        with patch.object(CombatCalculator, 'calculate_damage', return_value=result):
+            returned_result = await session._execute_move(player_char, enemy_char, move)
+            
+            assert returned_result.damage == 0
+            # 不应调用 modify_hp
+            enemy_char.modify_hp.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_execute_move_miss(self, mock_engine, player_char, enemy_char):
+        """测试执行招式未命中 (384-387)."""
+        session = CombatSession(mock_engine, [player_char, enemy_char], player_char)
+        
+        move = Mock()
+        
+        from src.game.combat.calculator import CombatCalculator, DamageResult
+        
+        result = DamageResult(damage=0, is_hit=False, is_crit=False)  # 未命中
+        
+        with patch.object(CombatCalculator, 'calculate_damage', return_value=result):
+            returned_result = await session._execute_move(player_char, enemy_char, move)
+            
+            assert returned_result.is_hit is False
+            # 未命中不应调用 modify_hp
+            enemy_char.modify_hp.assert_not_called()
+
+
+class TestCalculateNormalDamage:
+    """测试普通伤害计算 _calculate_normal_damage (393-398)."""
+
+    @pytest.fixture
+    def mock_engine(self):
+        return Mock()
+
+    def test_calculate_normal_damage(self, mock_engine):
+        """测试普通伤害计算 (393-398)."""
+        attacker = Mock()
+        attacker.get_attack.return_value = 100
+        
+        defender = Mock()
+        defender.get_defense.return_value = 30
+        
+        session = CombatSession(mock_engine, [attacker])
+        
+        with patch('random.uniform', return_value=1.0):  # 固定随机因子
+            damage = session._calculate_normal_damage(attacker, defender)
+            
+            # 基础伤害 = max(1, 100 - 30 * 0.3) = max(1, 91) = 91
+            # 应用随机因子 1.0 -> 91
+            assert damage == 91
+
+    def test_calculate_normal_damage_random_range(self, mock_engine):
+        """测试普通伤害计算的随机范围 (393-398)."""
+        attacker = Mock()
+        attacker.get_attack.return_value = 100
+        
+        defender = Mock()
+        defender.get_defense.return_value = 30
+        
+        session = CombatSession(mock_engine, [attacker])
+        
+        # 测试多次，确保随机性
+        damages = []
+        for _ in range(10):
+            damages.append(session._calculate_normal_damage(attacker, defender))
+        
+        # 所有伤害都应该是正数
+        assert all(d > 0 for d in damages)
+        # 伤害应该在合理范围内
+        assert all(80 <= d <= 100 for d in damages)
+
+
+class TestCheckEndLose:
+    """测试战斗结束检查 - 失败情况 (432)."""
+
+    @pytest.fixture
+    def mock_engine(self):
+        return Mock()
+
+    @pytest.fixture
+    def player_char(self):
+        char = Mock()
+        char.id = 1
+        char.name = "玩家"
+        char.get_hp.return_value = (100, 100)
+        return char
+
+    @pytest.fixture
+    def enemy_char(self):
+        char = Mock()
+        char.id = 2
+        char.name = "敌人"
+        char.get_hp.return_value = (80, 80)
+        return char
+
+    @pytest.mark.asyncio
+    async def test_check_end_lose(self, mock_engine, player_char, enemy_char):
+        """测试战斗失败判定 (432)."""
+        session = CombatSession(mock_engine, [player_char, enemy_char], player_char)
+        
+        # 玩家死亡，敌人存活
+        player_char.get_hp.return_value = (0, 100)
+        enemy_char.get_hp.return_value = (80, 80)
+        
+        result = await session._check_end()
+        
+        assert result == CombatResult.LOSE
+        assert session.winner == enemy_char
+
+
+class TestCombatSessionAdditionalCoverage:
+    """额外覆盖率测试."""
+
+    @pytest.fixture
+    def mock_engine(self):
+        return Mock()
+
+    @pytest.fixture
+    def player_char(self):
+        char = Mock()
+        char.id = 1
+        char.name = "玩家"
+        char.get_hp.return_value = (100, 100)
+        char.get_agility.return_value = 20
+        return char
+
+    @pytest.fixture
+    def enemy_char(self):
+        char = Mock()
+        char.id = 2
+        char.name = "敌人"
+        char.get_hp.return_value = (80, 80)
+        char.get_agility.return_value = 15
+        return char
+
+    @pytest.mark.asyncio
+    async def test_combat_loop_ai_calls_check_end(self, mock_engine, player_char, enemy_char):
+        """测试战斗循环中 AI 处理调用检查结束."""
+        session = CombatSession(mock_engine, [player_char, enemy_char])
+        session.active = True
+        
+        call_count = [0]
+        async def mock_process_ai():
+            call_count[0] += 1
+            if call_count[0] >= 1:
+                session.active = False  # 停止循环
+        
+        with patch.object(session, '_process_ai_turns', side_effect=mock_process_ai):
+            with patch.object(session, '_check_end', new_callable=AsyncMock, return_value=None):
+                with patch('asyncio.sleep', new_callable=AsyncMock):
+                    await session._combat_loop()
+                    
+                    assert call_count[0] >= 1
+
+    @pytest.mark.asyncio
+    async def test_handle_player_command_default_args(self, mock_engine, player_char, enemy_char):
+        """测试 handle_player_command 使用默认 args."""
+        session = CombatSession(mock_engine, [player_char, enemy_char], player_char)
+        session.participants[1].in_combat = True
+        session.participants[1].next_action_time = time.time() + 100
+        
+        # 不传 args 参数
+        success, msg = await session.handle_player_command(player_char, "kill")
+        
+        assert success is False
+        assert "你还不能行动" in msg
+
+    @pytest.mark.asyncio
+    async def test_process_ai_turns_can_fight_false(self, mock_engine, enemy_char):
+        """测试 AI 回合处理当 _can_fight 返回 False (181-182)."""
+        session = CombatSession(mock_engine, [enemy_char])
+        session.participants[2].is_player = False
+        session.participants[2].in_combat = True
+        session.participants[2].next_action_time = 0
+        
+        with patch.object(session, '_can_fight', return_value=False):
+            with patch.object(session, '_ai_decide', new_callable=AsyncMock) as mock_decide:
+                await session._process_ai_turns()
+                
+                # 不应该调用 AI 决策，因为 _can_fight 返回 False
+                mock_decide.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_execute_move_action_normal_attack(self, mock_engine, enemy_char):
+        """测试执行普通攻击（move 为 None）(365-368)."""
+        session = CombatSession(mock_engine, [enemy_char])
+        combatant = session.participants[2]
+        
+        # move 为 None 表示普通攻击
+        action = CombatAction("move", target=enemy_char, data={"move": None})
+        
+        result = Mock()
+        result.is_hit = True
+        result.damage = 30
+        result.is_crit = False
+        
+        with patch.object(session, '_execute_move', new_callable=AsyncMock, return_value=result):
+            with patch.object(session, '_calculate_cooldown', return_value=2.0):
+                await session._execute_move_action(combatant, action)
+                
+                assert "普通攻击" in session.log[-1]
+                assert "30" in session.log[-1]
