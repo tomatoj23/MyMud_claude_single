@@ -271,4 +271,149 @@ class InputSanitizer:
 
 ---
 
-*Execution Manual Complete*
+## ARCH-008: 资源清理完善
+
+### 执行步骤
+
+#### Step 1: 修复 engine.stop() 超时
+
+**文件**: `src/engine/core/engine.py`
+
+```python
+async def stop(self, timeout: float = 5.0) -> None:
+    """Stop engine with timeout control."""
+    try:
+        await asyncio.wait_for(self._do_stop(), timeout=timeout)
+    except asyncio.TimeoutError:
+        logger.error("Engine stop timeout, force cleanup")
+        self._force_cleanup()
+
+def _force_cleanup(self) -> None:
+    """Force resource cleanup."""
+    # Force close database connections
+    # Force stop scheduler
+    # Clear caches
+    pass
+```
+
+#### Step 2: 更新测试 fixture
+
+**文件**: `tests/conftest.py`
+
+```python
+@pytest_asyncio.fixture
+async def engine():
+    eng = await _get_engine()
+    yield eng
+    # Ensure cleanup
+    try:
+        await asyncio.wait_for(eng.stop(), timeout=5.0)
+    except asyncio.TimeoutError:
+        pass  # Continue even if timeout
+```
+
+---
+
+## ARCH-010: 文档字符串完善
+
+### 执行步骤
+
+#### Step 1: 添加文档字符串检查
+
+**工具配置**: `pyproject.toml`
+
+```toml
+[tool.pydocstyle]
+convention = "google"
+add-ignore = ["D100", "D101"]  # Skip module/class docstrings
+```
+
+#### Step 2: 批量添加文档模板
+
+**VS Code 代码片段**:
+```json
+{
+  "Python Function Docstring": {
+    "prefix": "docstring",
+    "body": [
+      "\"\"\"Brief description.",
+      "",
+      "Args:",
+      "    param1: Description",
+      "",
+      "Returns:",
+      "    Description of return value",
+      "",
+      "Raises:
+      "    ExceptionType: When this happens",
+      "\"\"\""
+    ]
+  }
+}
+```
+
+---
+
+## ARCH-011: 代码重复消除
+
+### 执行步骤
+
+#### Step 1: 提取公共 Mock 到 conftest.py
+
+**文件**: `tests/conftest.py`
+
+```python
+@pytest.fixture
+def mock_manager():
+    """Create mock object manager."""
+    return MockManager()
+
+@pytest.fixture
+def mock_character(mock_manager):
+    """Create mock character."""
+    db = MockDBModel(id=1, key="test_char")
+    return Character(mock_manager, db)
+
+@pytest.fixture
+def mock_room(mock_manager):
+    """Create mock room."""
+    db = MockDBModel(id=2, key="test_room")
+    return Room(mock_manager, db)
+```
+
+#### Step 2: 创建测试基类
+
+**文件**: `tests/base.py`
+
+```python
+class BaseTypeclassTest:
+    """Base test class for typeclass tests."""
+    
+    @pytest.fixture
+    def db_model(self):
+        return MockDBModel()
+    
+    @pytest.fixture
+    def instance(self, mock_manager, db_model):
+        return self.typeclass(mock_manager, db_model)
+
+class TestCharacterBase(BaseTypeclassTest):
+    typeclass = Character
+    
+    def test_name_property(self, instance):
+        assert instance.name == instance.key
+```
+
+---
+
+## 缺失项对照表
+
+| 债务 | 路线图位置 | 执行手册状态 | 补充内容 |
+|:---:|:---:|:---:|:---|
+| ARCH-008 | Day 12 | ✅ 已补充 | 资源清理完善 |
+| ARCH-010 | Day 13-14 | ✅ 已补充 | 文档字符串完善 |
+| ARCH-011 | Day 13-14 | ✅ 已补充 | 代码重复消除 |
+
+---
+
+*Execution Manual Complete - All 10 items covered*
