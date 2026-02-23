@@ -159,6 +159,23 @@ class Equipment(TypeclassBase):
         self.db.set("is_bound", True)
 
     @property
+    def name(self) -> str:
+        """装备显示名称.
+
+        人类可读的显示名称。如果未设置，则回退到 key。
+        存储在 attributes 中，无需数据库迁移。
+
+        Returns:
+            显示名称，或 key（如果 name 未设置）
+        """
+        return self.db.get("name") or self.key
+
+    @name.setter
+    def name(self, value: str) -> None:
+        """设置装备显示名称."""
+        self.db.set("name", value)
+
+    @property
     def set_name(self) -> Optional[str]:
         """所属套装."""
         return self.db.get("set_name")
@@ -207,7 +224,7 @@ class Equipment(TypeclassBase):
 
     def get_desc(self) -> str:
         """获取装备描述."""
-        desc = f"[{self.quality_name}] {self.key}\n"
+        desc = f"[{self.quality_name}] {self.name or self.key}\n"
         desc += f"部位: {SLOT_NAMES.get(self.slot, '未知')}\n"
 
         # 属性加成
@@ -329,7 +346,7 @@ class CharacterEquipmentMixin:
         # 使属性缓存失效
         self._invalidate_equipment_cache()
 
-        return True, f"装备成功：{item.key}"
+        return True, f"装备成功：{item.name or item.key}"
 
     async def unequip(self, slot: EquipmentSlot) -> tuple[bool, str]:
         """卸下装备.
@@ -356,7 +373,7 @@ class CharacterEquipmentMixin:
         # 使属性缓存失效
         self._invalidate_equipment_cache()
 
-        return True, f"卸下成功：{current.key}"
+        return True, f"卸下成功：{current.name or current.key}"
 
     def get_total_stats(self) -> dict[str, int]:
         """计算所有装备属性总和（带缓存）.

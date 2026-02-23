@@ -112,6 +112,23 @@ class Room(TypeclassBase):
     def environment(self, value: dict) -> None:
         self.db.set("environment", value)
 
+    @property
+    def name(self) -> str:
+        """房间显示名称.
+
+        人类可读的显示名称。如果未设置，则回退到 key。
+        存储在 attributes 中，无需数据库迁移。
+
+        Returns:
+            显示名称，或 key（如果 name 未设置）
+        """
+        return self.db.get("name") or self.key
+
+    @name.setter
+    def name(self, value: str) -> None:
+        """设置房间显示名称."""
+        self.db.set("name", value)
+
     # ===== 出口相关 =====
     def get_exits(self) -> list["Exit"]:
         """获取所有出口."""
@@ -196,7 +213,7 @@ class Room(TypeclassBase):
         Returns:
             描述文本
         """
-        desc = f"\n{self.key}\n"
+        desc = f"\n{self.name or self.key}\n"
         desc += "=" * 40 + "\n"
         desc += self.description + "\n"
 
@@ -209,14 +226,14 @@ class Room(TypeclassBase):
         # 物品
         items = self.get_items()
         if items:
-            item_names = [item.key for item in items]
+            item_names = [getattr(item, 'name', None) or item.key for item in items]
             desc += f"\n[物品] {', '.join(item_names)}"
 
         # 其他角色
         characters = self.get_characters()
         others = [c for c in characters if c != looker]
         if others:
-            char_names = [c.key for c in others]
+            char_names = [getattr(c, 'name', None) or c.key for c in others]
             desc += f"\n[人物] {', '.join(char_names)}"
 
         return desc
@@ -300,6 +317,23 @@ class Exit(TypeclassBase):
     def lock_str(self, value: str) -> None:
         self.db.set("lock_str", value)
 
+    @property
+    def name(self) -> str:
+        """出口显示名称.
+
+        人类可读的显示名称。如果未设置，则回退到 key。
+        存储在 attributes 中，无需数据库迁移。
+
+        Returns:
+            显示名称，或 key（如果 name 未设置）
+        """
+        return self.db.get("name") or self.key
+
+    @name.setter
+    def name(self, value: str) -> None:
+        """设置出口显示名称."""
+        self.db.set("name", value)
+
     async def can_pass(self, character: "Character") -> tuple[bool, str]:
         """检查是否可以通过.
 
@@ -327,7 +361,7 @@ class Exit(TypeclassBase):
 
         desc = f"{self.direction_name}"
         if self.destination:
-            desc += f" - {self.destination.key}"
+            desc += f" - {getattr(self.destination, 'name', None) or self.destination.key}"
         return desc
 
 
