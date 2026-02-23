@@ -165,12 +165,39 @@ feat: 阶段3完成 - Room/Exit/Equipment添加name属性，修改显示系统
 ## 阶段 5：P2 优先级功能
 
 **计划时间**: 2小时  
-**状态**: 待开始
+**实际时间**: 完成
 
-### 修改范围
+### 执行记录
 
-- `item.py`: 1 处
-- `npc/core.py`: 1 处
+| 文件 | 修改内容 | 状态 | 行号 |
+|:---|:---|:---:|:---|
+| `item.py` | Item 添加 `name` 属性 | ✅ 完成 | +16 行 |
+| `item.py` | `get_desc()` 使用 `name or key` | ✅ 完成 | 129 |
+| `npc/core.py` | NPC已继承Character.name | ✅ 无需修改 | - |
+
+### 分析
+
+**Item 类** (`src/game/typeclasses/item.py`):
+- 添加 `name` property（getter/setter），默认回退到 `key`
+- 修改 `get_desc()` 方法，使用 `self.name or self.key`
+
+**NPC 类** (`src/game/npc/core.py`):
+- NPC继承自Character，已自动获得 `name` 属性
+- 工厂方法 (`create_merchant`, `create_trainer`, `create_enemy`) 已正确设置 `name`
+- `get_dialogue_key()` 使用 `self.key` 是正确行为（内部逻辑需要key）
+
+### 验证结果
+
+- [x] 24/24 item 测试通过
+- [x] 42/42 npc 测试通过
+- [x] 物品描述正确显示 `name`
+
+### 提交信息
+
+```
+commit (待创建)
+feat: 阶段5完成 - Item添加name属性，NPC已继承无需修改
+```
 
 ---
 
@@ -199,4 +226,4 @@ feat: 阶段3完成 - Room/Exit/Equipment添加name属性，修改显示系统
 
 ---
 
-*最后更新: 2026-02-23 12:08*
+*最后更新: 2026-02-23 12:10*

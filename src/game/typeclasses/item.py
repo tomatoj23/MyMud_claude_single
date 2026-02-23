@@ -83,6 +83,23 @@ class Item(TypeclassBase):
     def stack_size(self, value: int) -> None:
         self.db.set("stack_size", value)
 
+    @property
+    def name(self) -> str:
+        """物品显示名称.
+
+        人类可读的显示名称。如果未设置，则回退到 key。
+        存储在 attributes 中，无需数据库迁移。
+
+        Returns:
+            显示名称，或 key（如果 name 未设置）
+        """
+        return self.db.get("name") or self.key
+
+    @name.setter
+    def name(self, value: str) -> None:
+        """设置物品显示名称."""
+        self.db.set("name", value)
+
     def can_pickup(self, character: "Character") -> tuple[bool, str]:
         """检查是否可以拾取.
 
@@ -120,7 +137,7 @@ class Item(TypeclassBase):
 
     def get_desc(self) -> str:
         """获取物品描述."""
-        desc = f"{self.key}\n"
+        desc = f"{self.name or self.key}\n"
         desc += f"{self.description}\n"
         if self.value > 0:
             desc += f"价值: {self.value} 铜钱\n"
