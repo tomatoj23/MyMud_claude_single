@@ -276,10 +276,20 @@ class DialogueSystem:
             if not character.is_quest_completed(conditions["quest_completed"]):
                 return False
 
-        # 物品条件
+        # 物品条件 (TD-010)
         if "has_item" in conditions:
-            # TODO: 检查背包
-            pass
+            item_check = conditions["has_item"]
+            if isinstance(item_check, dict):
+                item_key = item_check.get("key")
+                quantity = item_check.get("quantity", 1)
+            else:
+                item_key = item_check
+                quantity = 1
+            
+            # 检查背包中是否有足够物品
+            has_enough = self._check_inventory(character, item_key, quantity)
+            if not has_enough:
+                return False
 
         # 因果点条件
         if "karma" in conditions:
@@ -311,12 +321,11 @@ class DialogueSystem:
             reason = effects.get("favor_reason", "")
             character.npc_relations.modify_favor(npc.key, delta, reason)
 
-        # 给予物品
+        # 给予物品 (TD-011)
         if "give_item" in effects:
             item_key = effects["give_item"]
             count = effects.get("item_count", 1)
-            # TODO: 给予物品
-            pass
+            await self._give_item_to_character(character, item_key, count)
 
         # 给予银两
         if "give_silver" in effects:
@@ -335,11 +344,10 @@ class DialogueSystem:
                 else:
                     character.add_exp(exp)
 
-        # 解锁任务
+        # 解锁任务 (TD-012)
         if "unlock_quest" in effects:
             quest_key = effects["unlock_quest"]
-            # TODO: 解锁任务
-            pass
+            self._unlock_quest_for_character(character, quest_key)
 
         # 因果点变化
         if "karma" in effects:
@@ -349,12 +357,103 @@ class DialogueSystem:
             for karma_type, points in effects["karma"].items():
                 karma_sys.add_karma(karma_type, points)
 
-        # 记录选择
+        # 记录选择 (TD-013)
         if "record_choice" in effects:
             choice_id = effects["record_choice"]
             choice_value = effects.get("choice_value", "")
-            # TODO: 记录到世界状态
-            pass
+            # 记录到世界状态
+            self._record_world_state(character, choice_id, choice_value)
+
+    def _check_inventory(self, character: Character, item_key: str, quantity: int = 1) -> bool:
+        """检查角色背包中是否有足够物品 (TD-010).
+        
+        Args:
+            character: 角色
+            item_key: 物品key
+            quantity: 所需数量
+            
+        Returns:
+            是否有足够物品
+        """
+        # 获取角色位置的内容（背包）
+        if not hasattr(character, 'contents'):
+            return False
+        
+        count = 0
+        for item in character.contents:
+            if hasattr(item, 'key') and item.key == item_key:
+                count += 1
+                if count >= quantity:
+                    return True
+        
+        return count >= quantity
+    
+    async def _give_item_to_character(self, character: Character, item_key: str, count: int = 1) -> bool:
+        """给予角色物品 (TD-011).
+        
+        Args:
+            character: 角色
+            item_key: 物品key
+            count: 数量
+            
+        Returns:
+            是否成功
+        """
+        try:
+            from src.engine.objects.manager import ObjectManager
+            
+            manager = ObjectManager()
+            for _ in range(count):
+                item = await manager.create(
+                    key=item_key,
+                    typeclass_path="src.game.typeclasses.item.Item"
+                )
+                if item:
+                    item.location = character
+            return True
+        except Exception:
+            return False
+    
+    def _unlock_quest_for_character(self, character: Character, quest_key: str) -> bool:
+        """为角色解锁任务 (TD-012).
+        
+        Args:
+            character: 角色
+            quest_key: 任务key
+            
+        Returns:
+            是否成功
+        """
+        try:
+            if hasattr(character, 'unlock_quest'):
+                character.unlock_quest(quest_key)
+                return True
+            # 如果没有unlock_quest方法，直接添加到可接任务列表
+            available = character.db.get("available_quests", [])
+            if quest_key not in available:
+                available.append(quest_key)
+                character.db.set("available_quests", available)
+            return True
+        except Exception:
+            return False
+    
+    def _record_world_state(self, character: Character, choice_id: str, choice_value: str) -> None:
+        """记录世界状态 (TD-013).
+        
+        Args:
+            character: 角色
+            choice_id: 选择ID
+            choice_value: 选择值
+        """
+        world_state = character.db.get("world_state", {})
+        if "choices" not in world_state:
+            world_state["choices"] = {}
+        
+        world_state["choices"][choice_id] = {
+            "value": choice_value,
+            "timestamp": "now"  # 简化实现
+        }
+        character.db.set("world_state", world_state)
 
     def format_dialogue(
         self, character: Character, npc: NPC, node: DialogueNode
