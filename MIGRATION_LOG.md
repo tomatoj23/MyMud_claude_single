@@ -325,4 +325,21 @@ feat: 阶段1完成 - 添加Character name属性，修改战斗系统显示
 
 **测试验证**: 87个相关测试全部通过 ✅
 
-*最后更新: 2026-02-23 12:20*
+### 后续优化：修复遗漏的 .key 使用
+
+**时间**: 2026-02-23  
+**问题**: 发现命令系统中还有几处显示消息使用 `.key` 而非 `.name`
+
+#### 修复内容
+
+| 文件 | 位置 | 修改前 | 修改后 | 说明 |
+|:---|:---:|:---|:---|:---|
+| `default.py` | 106 | `old_location.key` | `old_location.name` | 离开房间提示 |
+| `default.py` | 108 | `target.key` | `target.name` | 到达房间提示 |
+| `default.py` | 145 | `item.key` | `item.name` | 背包物品列表 |
+| `default.py` | 235 | `target.key` | `target.name` | 删除对象提示 |
+| `command.py` | 207 | `obj.key` | `obj.name` | 多匹配提示 |
+
+**测试验证**: 84个相关测试全部通过 ✅
+
+*最后更新: 2026-02-23 12:25*

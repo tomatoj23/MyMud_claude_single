@@ -103,9 +103,9 @@ class CmdMove(Command):
         self.caller.location = target
 
         if old_location:
-            self.msg(f"你离开了 {old_location.key}。")
+            self.msg(f"你离开了 {old_location.name}。")
 
-        self.msg(f"你来到了 {target.key}。")
+        self.msg(f"你来到了 {target.name}。")
 
         # 触发查看
         look_cmd = CmdLook()
@@ -142,7 +142,7 @@ class CmdInventory(Command):
         if not items:
             self.msg("你的背包是空的。")
         else:
-            item_names = [f"  {item.key}" for item in items]
+            item_names = [f"  {item.name}" for item in items]
             self.msg("你的背包里有:\n" + "\n".join(item_names))
 
         return CommandResult(True)
@@ -232,7 +232,7 @@ class CmdDestroy(Command):
             return CommandResult(False)
 
         # 执行删除
-        name = target.key
+        name = target.name
         success = await self.caller._manager.delete(target)
 
         if success:
