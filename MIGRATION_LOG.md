@@ -302,4 +302,27 @@ feat: 阶段1完成 - 添加Character name属性，修改战斗系统显示
 
 ---
 
-*最后更新: 2026-02-23 12:15*
+### 后续优化：简化显示代码
+
+**时间**: 2026-02-23  
+**说明**: 由于所有类型class已实现 `name` property，显示代码中的 `name or key` 回退是冗余的
+
+#### 简化内容
+
+| 文件 | 修改前 | 修改后 |
+|:---|:---|:---|
+| `item.py:140` | `self.name or self.key` | `self.name` |
+| `equipment.py:227` | `self.name or self.key` | `self.name` |
+| `equipment.py:349` | `item.name or item.key` | `item.name` |
+| `equipment.py:376` | `current.name or current.key` | `current.name` |
+| `room.py:216` | `self.name or self.key` | `self.name` |
+| `room.py:229` | `getattr(item, 'name') or item.key` | `item.name` |
+| `room.py:236` | `getattr(c, 'name') or c.key` | `c.name` |
+| `room.py:364` | `getattr(dest, 'name') or dest.key` | `dest.name` |
+| `default.py:42` | `getattr(obj, 'name') or obj.key` | `obj.name` |
+
+**原理**: `name` property 内部已实现 `return self.db.get("name") or self.key`，外部无需重复回退
+
+**测试验证**: 87个相关测试全部通过 ✅
+
+*最后更新: 2026-02-23 12:20*

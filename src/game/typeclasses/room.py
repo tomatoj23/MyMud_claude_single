@@ -213,7 +213,7 @@ class Room(TypeclassBase):
         Returns:
             描述文本
         """
-        desc = f"\n{self.name or self.key}\n"
+        desc = f"\n{self.name}\n"
         desc += "=" * 40 + "\n"
         desc += self.description + "\n"
 
@@ -226,14 +226,14 @@ class Room(TypeclassBase):
         # 物品
         items = self.get_items()
         if items:
-            item_names = [getattr(item, 'name', None) or item.key for item in items]
+            item_names = [item.name for item in items]
             desc += f"\n[物品] {', '.join(item_names)}"
 
         # 其他角色
         characters = self.get_characters()
         others = [c for c in characters if c != looker]
         if others:
-            char_names = [getattr(c, 'name', None) or c.key for c in others]
+            char_names = [c.name for c in others]
             desc += f"\n[人物] {', '.join(char_names)}"
 
         return desc
@@ -361,7 +361,7 @@ class Exit(TypeclassBase):
 
         desc = f"{self.direction_name}"
         if self.destination:
-            desc += f" - {getattr(self.destination, 'name', None) or self.destination.key}"
+            desc += f" - {self.destination.name}"
         return desc
 
 

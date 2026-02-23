@@ -39,7 +39,7 @@ class CmdLook(Command):
 
                 # 显示位置内容
                 contents = [
-                    getattr(obj, 'name', None) or obj.key
+                    obj.name
                     for obj in location.contents
                     if obj != self.caller
                 ]

@@ -137,7 +137,7 @@ class Item(TypeclassBase):
 
     def get_desc(self) -> str:
         """获取物品描述."""
-        desc = f"{self.name or self.key}\n"
+        desc = f"{self.name}\n"
         desc += f"{self.description}\n"
         if self.value > 0:
             desc += f"价值: {self.value} 铜钱\n"

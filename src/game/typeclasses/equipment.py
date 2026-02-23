@@ -224,7 +224,7 @@ class Equipment(TypeclassBase):
 
     def get_desc(self) -> str:
         """获取装备描述."""
-        desc = f"[{self.quality_name}] {self.name or self.key}\n"
+        desc = f"[{self.quality_name}] {self.name}\n"
         desc += f"部位: {SLOT_NAMES.get(self.slot, '未知')}\n"
 
         # 属性加成
@@ -346,7 +346,7 @@ class CharacterEquipmentMixin:
         # 使属性缓存失效
         self._invalidate_equipment_cache()
 
-        return True, f"装备成功：{item.name or item.key}"
+        return True, f"装备成功：{item.name}"
 
     async def unequip(self, slot: EquipmentSlot) -> tuple[bool, str]:
         """卸下装备.
@@ -373,7 +373,7 @@ class CharacterEquipmentMixin:
         # 使属性缓存失效
         self._invalidate_equipment_cache()
 
-        return True, f"卸下成功：{current.name or current.key}"
+        return True, f"卸下成功：{current.name}"
 
     def get_total_stats(self) -> dict[str, int]:
         """计算所有装备属性总和（带缓存）.
