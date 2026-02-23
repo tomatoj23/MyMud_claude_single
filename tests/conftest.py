@@ -7,12 +7,25 @@ import tempfile
 from pathlib import Path
 from typing import AsyncGenerator
 
+import pytest
 import pytest_asyncio
 
 from src.engine.core.engine import GameEngine
 from src.engine.objects.manager import ObjectManager
 from src.game.npc.core import NPC
-from src.utils.config import Config
+from src.utils.config import Config, ConfigManager
+
+
+# 单例重置fixture（自动使用）
+@pytest.fixture(autouse=True)
+def reset_singletons():
+    """每个测试前重置所有单例状态.
+    
+    确保测试之间相互隔离，避免单例状态污染。
+    """
+    ConfigManager.reset()
+    yield
+    ConfigManager.reset()
 
 
 # 全局引擎实例（每个测试模块复用）

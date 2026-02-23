@@ -188,6 +188,9 @@ class ConfigFileHandler(FileSystemEventHandler):
             self.callback()
 
 
+import threading
+
+
 class ConfigManager:
     """配置管理器.
 
@@ -197,6 +200,7 @@ class ConfigManager:
 
     _instance: ConfigManager | None = None
     _initialized: bool = False
+    _lock = threading.Lock()
 
     CONFIG_FILES = [
         "config.yaml",
@@ -204,6 +208,30 @@ class ConfigManager:
         "config.local.yaml",
         "config.local.json",
     ]
+
+    @classmethod
+    def reset(cls) -> None:
+        """重置单例实例（仅用于测试）.
+        
+        警告: 不要在生产代码中调用此方法！
+        此方法用于测试隔离，确保每个测试有干净的单例状态。
+        """
+        with cls._lock:
+            cls._instance = None
+            cls._initialized = False
+
+    @classmethod
+    def get_instance(cls) -> ConfigManager:
+        """获取单例实例（线程安全）.
+        
+        Returns:
+            ConfigManager单例实例
+        """
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = cls()
+        return cls._instance
 
     def __new__(cls) -> ConfigManager:
         """创建单例实例."""
