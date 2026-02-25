@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Optional
 from src.engine.core.typeclass import TypeclassBase
 from src.game.typeclasses.equipment import CharacterEquipmentMixin
 from src.game.typeclasses.wuxue import CharacterWuxueMixin
+from src.game.typeclasses.validation import CharacterValidator
 
 if TYPE_CHECKING:
     pass
@@ -26,6 +27,26 @@ class Character(CharacterEquipmentMixin, CharacterWuxueMixin, TypeclassBase):
     """
 
     typeclass_path = "src.game.typeclasses.character.Character"
+
+    def __init__(self, db_model=None):
+        """初始化角色."""
+        super().__init__(db_model)
+        self._validator = CharacterValidator()
+
+    # ===== 状态验证 =====
+    
+    def validate_state(self) -> list[str]:
+        """验证状态一致性，返回错误列表."""
+        errors = self._validator.validate(self)
+        return [f"[{e.field}] {e.message}: 当前={e.current_value}" for e in errors]
+    
+    def fix_state(self) -> list[str]:
+        """自动修复状态问题."""
+        return self._validator.fix(self)
+    
+    def is_state_valid(self) -> bool:
+        """检查状态是否有效."""
+        return len(self.validate_state()) == 0
 
     # ===== 显示名称 =====
     @property
