@@ -1,0 +1,108 @@
+# 游戏平衡配置
+# 修改此文件可调整游戏平衡性，无需修改代码
+
+# 战斗系统配置
+combat:
+  damage:
+    base: 10                    # 基础伤害
+    variance: 0.1               # 伤害浮动范围 (10%)
+    crit_chance: 0.05           # 暴击率 (5%)
+    crit_multiplier: 1.5        # 暴击伤害倍率
+    counter_bonus: 0.2          # 克制伤害加成 (20%)
+    countered_penalty: -0.15    # 被克制伤害减成 (-15%)
+  
+  cooldown:
+    base: 3.0                   # 基础冷却时间（秒）
+    min: 1.0                    # 最小冷却时间
+    agility_factor: 0.02        # 敏捷对冷却的影响系数
+  
+  hit_rate:
+    base: 0.90                  # 基础命中率 (90%)
+    min: 0.30                   # 最小命中率
+    max: 0.95                   # 最大命中率
+    agility_mod_per_point: 0.005 # 每点敏捷差影响的命中率
+  
+  flee:
+    base_chance: 0.5            # 基础逃跑成功率
+    min_chance: 0.2             # 最小逃跑成功率
+    max_chance: 0.9             # 最大逃跑成功率
+    agility_factor: 0.02        # 敏捷差影响系数
+
+# 角色成长配置
+leveling:
+  exp_curve: [100, 200, 400, 800, 1600, 3200, 6400, 12800, 25600, 51200]
+  hp_per_level: 25              # 每级增加气血
+  mp_per_level: 15              # 每级增加内力
+  ep_per_level: 5               # 每级增加精力
+
+# 属性计算配置
+attributes:
+  hp:
+    base: 100
+    per_constitution: 10        # 每点体质增加气血
+    per_gengu: 5                # 每点根骨增加气血
+  
+  mp:
+    base: 50
+    per_spirit: 8               # 每点精神增加内力
+    per_gengu: 3                # 每点根骨增加内力
+  
+  ep:
+    base: 100
+  
+  attack:
+    per_strength: 2             # 每点臂力增加攻击
+  
+  defense:
+    per_constitution: 1         # 每点体质增加防御
+  
+  agility:
+    per_agility: 1              # 每点身法增加敏捷
+  
+  max_weight:
+    base: 50
+    per_strength: 5             # 每点臂力增加负重
+
+# 武学配置
+wuxue:
+  practice:
+    base_gain: 10               # 基础练习收益
+    per_wuxing: 3               # 每点悟性增加的收益
+  
+  level_up:
+    exp_required_multiplier: 100 # 升级所需经验 = 层数 * 100
+  
+  mastery:
+    max_level: 10               # 武功最高层数
+
+# 装备配置
+equipment:
+  durability:
+    default_max: 100
+  
+  quality_multiplier:
+    common: 1.0
+    uncommon: 1.2
+    rare: 1.5
+    epic: 2.0
+    legendary: 3.0
+
+# 宠物配置
+pet:
+  max_loyalty: 100
+  min_loyalty: 0
+  level_up_exp_multiplier: 100  # 升级所需经验 = 等级 * 100
+  
+  bonuses:
+    fox:
+      agility_per_level: 2
+      wuxing_per_level: 1
+    wolf:
+      attack_per_level: 4
+      strength_per_level: 1
+    tiger:
+      attack_per_level: 6
+      constitution_per_level: 1
+    bird:
+      agility_per_level: 4
+      fuyuan_per_level: 1
