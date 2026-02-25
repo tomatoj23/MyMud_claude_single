@@ -6,9 +6,13 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
+from contextlib import contextmanager
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
+
+from .transaction import CombatTransaction, TransactionManager
 
 if TYPE_CHECKING:
     from src.engine.core.engine import GameEngine
@@ -67,6 +71,9 @@ class CombatAction:
         self.data = data or {}
 
 
+logger = logging.getLogger(__name__)
+
+
 class CombatSession:
     """即时制战斗会话.
 
@@ -106,11 +113,25 @@ class CombatSession:
         self.winner: Character | None = None
         self.log: list[str] = []
         self._last_update_time = time.time()  # 用于实时战斗结算 (TD-022)
+        self._txn_manager = TransactionManager()  # 事务管理器
 
         # 初始化参与者
         for char in participants:
             is_player = player_character is not None and char.id == player_character.id
             self.participants[char.id] = Combatant(char, is_player)
+
+    @contextmanager
+    def transaction(self):
+        """提供事务保护上下文.
+        
+        使用示例:
+            with self.transaction() as txn:
+                txn.snapshot(target, ['hp'])
+                target.hp -= damage
+                txn.commit()
+        """
+        with self._txn_manager.begin() as txn:
+            yield txn
 
     async def start(self) -> None:
         """开始战斗."""
@@ -284,7 +305,7 @@ class CombatSession:
     async def _do_cast(
         self, combatant: Combatant, args: dict
     ) -> tuple[bool, str]:
-        """执行施法（内功/特殊技能）(TD-023)."""
+        """执行施法（内功/特殊技能）(TD-023)（带事务保护）."""
         char = combatant.character
         
         # 获取要施放的内功
@@ -307,45 +328,61 @@ class CombatSession:
         if hasattr(char, 'mp') and char.mp < mp_cost:
             return False, "内力不足"
         
-        # 消耗内力
-        if hasattr(char, 'mp'):
-            char.mp -= mp_cost
-        
         # 获取内功效果
         effect = args.get("effect", "heal")
         power = args.get("power", 50)
         
-        # 应用内功效果
-        if effect == "heal":
-            # 治疗
-            if hasattr(char, 'hp'):
-                old_hp = char.hp
-                char.hp = min(char.max_hp, char.hp + power)
-                healed = char.hp - old_hp
-                combatant.set_cooldown(3.0)
-                return True, f"运功疗伤，恢复 {healed} 点气血"
-        
-        elif effect == "buff":
-            # 增益效果
-            buff_type = args.get("buff_type", "attack")
-            duration = args.get("duration", 10)
-            # 添加BUFF（简化实现）
-            combatant.set_cooldown(2.0)
-            return True, f"运起{neigong.name}，{buff_type}提升"
-        
-        elif effect == "attack":
-            # 内功攻击
-            target = self._get_target(combatant, args.get("target_id"))
-            if not target:
-                return False, "目标不存在"
-            
-            damage = power
-            if hasattr(target.character, 'hp'):
-                target.character.hp -= damage
-            combatant.set_cooldown(4.0)
-            return True, f"以{neigong.name}攻击，造成{damage}点伤害"
-        
-        return False, "未知内功效果"
+        # 应用内功效果（带事务保护）
+        try:
+            with self.transaction() as txn:
+                # 记录快照
+                if hasattr(char, 'mp'):
+                    txn.snapshot(char, ['mp'])
+                
+                # 消耗内力
+                if hasattr(char, 'mp'):
+                    char.mp -= mp_cost
+                
+                if effect == "heal":
+                    # 治疗
+                    if hasattr(char, 'hp'):
+                        txn.snapshot(char, ['hp'])
+                        old_hp = char.hp
+                        char.hp = min(char.max_hp, char.hp + power)
+                        healed = char.hp - old_hp
+                        combatant.set_cooldown(3.0)
+                        txn.commit()
+                        return True, f"运功疗伤，恢复 {healed} 点气血"
+                
+                elif effect == "buff":
+                    # 增益效果
+                    buff_type = args.get("buff_type", "attack")
+                    duration = args.get("duration", 10)
+                    combatant.set_cooldown(2.0)
+                    txn.commit()
+                    return True, f"运起{neigong.name}，{buff_type}提升"
+                
+                elif effect == "attack":
+                    # 内功攻击
+                    target = self._get_target(combatant, args.get("target_id"))
+                    if not target:
+                        txn.rollback()
+                        return False, "目标不存在"
+                    
+                    damage = power
+                    if hasattr(target.character, 'hp'):
+                        txn.snapshot(target.character, ['hp'])
+                        target.character.hp -= damage
+                    combatant.set_cooldown(4.0)
+                    txn.commit()
+                    return True, f"以{neigong.name}攻击，造成{damage}点伤害"
+                
+                txn.commit()
+                return False, "未知内功效果"
+                
+        except Exception as e:
+            logger.exception(f"内功施放失败: {e}")
+            return False, f"施法失败: {e}"
 
     async def _do_flee(
         self, combatant: Combatant, args: dict
@@ -465,14 +502,31 @@ class CombatSession:
     async def _execute_move(
         self, attacker: Character, defender: Character, move: Move | None
     ) -> DamageResult:
-        """执行招式并计算伤害."""
+        """执行招式并计算伤害（带事务保护）."""
         from .calculator import CombatCalculator
 
         calculator = CombatCalculator()
         result = calculator.calculate_damage(attacker, defender, move, None)
 
         if result.is_hit and result.damage > 0:
-            defender.modify_hp(-int(result.damage))
+            try:
+                with self.transaction() as txn:
+                    # 记录快照
+                    txn.snapshot(defender, ['hp'])
+                    
+                    # 执行伤害
+                    defender.modify_hp(-int(result.damage))
+                    
+                    # 提交事务
+                    txn.commit()
+            except Exception as e:
+                logger.exception(f"战斗伤害结算失败: {e}")
+                # 事务会自动回滚，返回未命中的结果
+                result = type(
+                    'DamageResult',
+                    (),
+                    {'damage': 0, 'is_hit': False, 'is_crit': False, 'messages': ['结算失败']}
+                )()
 
         return result
 
