@@ -266,7 +266,7 @@ class CharacterEquipmentMixin:
         # 装备属性缓存
         self._cached_total_stats: Optional[dict[str, int]] = None
 
-    def _invalidate_equipment_cache(self) -> None:
+    def _equipment_invalidate_cache(self) -> None:
         """使装备属性缓存失效.
 
         在装备变更、卸下、装备属性变化时调用。
@@ -274,7 +274,7 @@ class CharacterEquipmentMixin:
         self._cached_total_stats = None
 
     @property
-    def equipped(self) -> dict[str, Optional[int]]:
+    def equipment_slots(self) -> dict[str, Optional[int]]:
         """已装备物品 {slot_value: equipment_id}.
 
         Returns:
@@ -282,11 +282,11 @@ class CharacterEquipmentMixin:
         """
         return self.db.get("equipped", {})
 
-    @equipped.setter
-    def equipped(self, value: dict[str, Optional[int]]) -> None:
+    @equipment_slots.setter
+    def equipment_slots(self, value: dict[str, Optional[int]]) -> None:
         self.db.set("equipped", value)
 
-    def get_equipped(self, slot: EquipmentSlot) -> Optional[Equipment]:
+    def equipment_get_item(self, slot: EquipmentSlot) -> Optional[Equipment]:
         """获取指定槽位装备.
 
         Args:
@@ -297,7 +297,7 @@ class CharacterEquipmentMixin:
         """
         from src.engine.core.typeclass import TypeclassBase
 
-        equipped = self.equipped
+        equipped = self.equipment_slots
         obj_id = equipped.get(slot.value)
         if obj_id and hasattr(self, "_manager"):
             obj = self._manager.get(obj_id)
@@ -305,7 +305,7 @@ class CharacterEquipmentMixin:
                 return obj
         return None
 
-    async def equip(self, item: Equipment) -> tuple[bool, str]:
+    async def equipment_equip(self, item: Equipment) -> tuple[bool, str]:
         """装备物品.
 
         Args:
@@ -326,14 +326,14 @@ class CharacterEquipmentMixin:
         slot = item.slot
 
         # 如果槽位已有装备，先卸下
-        current = self.get_equipped(slot)
+        current = self.equipment_get_item(slot)
         if current:
-            await self.unequip(slot)
+            await self.equipment_unequip(slot)
 
         # 装备新物品
-        equipped = self.equipped
+        equipped = self.equipment_slots
         equipped[slot.value] = item.id
-        self.equipped = equipped
+        self.equipment_slots = equipped
 
         # 绑定装备
         if not item.is_bound:
@@ -341,14 +341,14 @@ class CharacterEquipmentMixin:
 
         # 触发装备钩子
         item.at_equipped(self)
-        self.at_equip(item)
+        self.equipment_on_equip(item)
 
         # 使属性缓存失效
-        self._invalidate_equipment_cache()
+        self._equipment_invalidate_cache()
 
         return True, f"装备成功：{item.name}"
 
-    async def unequip(self, slot: EquipmentSlot) -> tuple[bool, str]:
+    async def equipment_unequip(self, slot: EquipmentSlot) -> tuple[bool, str]:
         """卸下装备.
 
         Args:
@@ -357,25 +357,25 @@ class CharacterEquipmentMixin:
         Returns:
             (是否成功, 消息)
         """
-        current = self.get_equipped(slot)
+        current = self.equipment_get_item(slot)
         if not current:
             return False, "该槽位未装备物品"
 
         # 从装备栏移除
-        equipped = self.equipped
+        equipped = self.equipment_slots
         del equipped[slot.value]
-        self.equipped = equipped
+        self.equipment_slots = equipped
 
         # 触发卸下钩子
         current.at_unequipped(self)
-        self.at_unequip(current)
+        self.equipment_on_unequip(current)
 
         # 使属性缓存失效
-        self._invalidate_equipment_cache()
+        self._equipment_invalidate_cache()
 
         return True, f"卸下成功：{current.name}"
 
-    def get_total_stats(self) -> dict[str, int]:
+    def equipment_get_stats(self) -> dict[str, int]:
         """计算所有装备属性总和（带缓存）.
 
         Returns:
@@ -389,7 +389,7 @@ class CharacterEquipmentMixin:
         total: dict[str, int] = {}
 
         for slot in EquipmentSlot:
-            item = self.get_equipped(slot)
+            item = self.equipment_get_item(slot)
             if item and not item.is_broken:
                 for stat, value in item.stats_bonus.items():
                     total[stat] = total.get(stat, 0) + value
@@ -399,7 +399,7 @@ class CharacterEquipmentMixin:
 
         return total
 
-    def get_set_bonuses(self) -> dict[str, Any]:
+    def equipment_get_set_bonuses(self) -> dict[str, Any]:
         """计算套装效果.
 
         Returns:
@@ -417,7 +417,7 @@ class CharacterEquipmentMixin:
         # 统计各套装件数
         set_counts: dict[str, int] = {}
         for slot in EquipmentSlot:
-            item = self.get_equipped(slot)
+            item = self.equipment_get_item(slot)
             if item and item.set_name:
                 set_counts[item.set_name] = set_counts.get(item.set_name, 0) + 1
 
@@ -437,14 +437,14 @@ class CharacterEquipmentMixin:
 
         return bonuses
     
-    def get_total_set_stats(self) -> dict[str, int | float]:
+    def equipment_get_set_stats(self) -> dict[str, int | float]:
         """获取所有套装效果提供的总属性加成.
         
         Returns:
             合并后的属性加成字典
         """
         total_stats: dict[str, int | float] = {}
-        set_bonuses = self.get_set_bonuses()
+        set_bonuses = self.equipment_get_set_bonuses()
         
         for set_name, bonus_info in set_bonuses.items():
             stats = bonus_info.get("stats", {})
@@ -456,7 +456,7 @@ class CharacterEquipmentMixin:
         
         return total_stats
     
-    def get_set_info(self) -> list[dict]:
+    def equipment_get_set_info(self) -> list[dict]:
         """获取套装信息列表（用于显示）.
         
         Returns:
@@ -467,7 +467,7 @@ class CharacterEquipmentMixin:
         # 统计各套装件数
         set_counts: dict[str, int] = {}
         for slot in EquipmentSlot:
-            item = self.get_equipped(slot)
+            item = self.equipment_get_item(slot)
             if item and item.set_name:
                 set_counts[item.set_name] = set_counts.get(item.set_name, 0) + 1
         
@@ -504,19 +504,19 @@ class CharacterEquipmentMixin:
         
         return result
 
-    def get_attack_bonus(self) -> int:
+    def equipment_get_attack_bonus(self) -> int:
         """获取装备提供的攻击力加成."""
-        return self.get_total_stats().get("attack", 0)
+        return self.equipment_get_stats().get("attack", 0)
 
-    def get_defense_bonus(self) -> int:
+    def equipment_get_defense_bonus(self) -> int:
         """获取装备提供的防御力加成."""
-        return self.get_total_stats().get("defense", 0)
+        return self.equipment_get_stats().get("defense", 0)
 
     # ===== 生命周期钩子 =====
-    def at_equip(self, item: Equipment) -> None:
+    def equipment_on_equip(self, item: Equipment) -> None:
         """装备时调用."""
         pass
 
-    def at_unequip(self, item: Equipment) -> None:
+    def equipment_on_unequip(self, item: Equipment) -> None:
         """卸下时调用."""
         pass

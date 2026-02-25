@@ -293,8 +293,8 @@ class TestWuxueSystemFlow:
         # 学习武功
         success, msg = await character.learn_wuxue(kungfu)
         assert success is True
-        assert character.has_learned("罗汉拳") is True
-        assert character.get_wuxue_level("罗汉拳") == 1
+        assert character.wuxue_has_learned("罗汉拳") is True
+        assert character.wuxue_get_level("罗汉拳") == 1
 
     @pytest.mark.asyncio
     async def test_practice_and_level_up(self, game_engine: GameEngine):
@@ -710,7 +710,7 @@ class TestCrossSystemIntegration:
         await attacker.learn_wuxue(kungfu)
 
         # 验证武功学习成功
-        assert attacker.has_learned("降龙十八掌") is True
+        assert attacker.wuxue_has_learned("降龙十八掌") is True
 
 
 class TestPersistence:

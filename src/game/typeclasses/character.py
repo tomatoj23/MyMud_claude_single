@@ -227,12 +227,14 @@ class Character(CharacterEquipmentMixin, CharacterWuxueMixin, TypeclassBase):
     def get_attack(self) -> int:
         """计算攻击力（基础 + 装备 + BUFF）."""
         base = self.attributes.get("strength", 10) * 2
-        return base
+        equipment = self.equipment_get_attack_bonus()
+        return base + equipment
 
     def get_defense(self) -> int:
         """计算防御力."""
         base = self.attributes.get("constitution", 10)
-        return base
+        equipment = self.equipment_get_defense_bonus()
+        return base + equipment
 
     def get_agility(self) -> int:
         """计算敏捷（影响闪避、命中）."""
@@ -282,9 +284,7 @@ class Character(CharacterEquipmentMixin, CharacterWuxueMixin, TypeclassBase):
             装备负重加成值
         """
         # 从装备系统中获取加成
-        # 目前装备系统未完全实现，返回0
-        # TODO: 集成装备系统后完善
-        return 0
+        return self.equipment_get_stats().get("max_weight", 0)
 
     def can_carry(self, item: "Item") -> tuple[bool, str]:
         """检查是否可以携带指定物品.

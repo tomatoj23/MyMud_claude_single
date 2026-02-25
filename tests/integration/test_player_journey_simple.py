@@ -71,7 +71,7 @@ class TestPlayerJourneySimplified:
             assert result is True, f"装备失败: {msg}"
             
             # 验证装备成功
-            equipped = player.get_equipped(EquipmentSlot.MAIN_HAND)
+            equipped = player.equipment_get_item(EquipmentSlot.MAIN_HAND)
             assert equipped is not None
             assert equipped.key == "iron_sword"
             

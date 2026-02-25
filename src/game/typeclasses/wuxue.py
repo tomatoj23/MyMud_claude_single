@@ -135,7 +135,7 @@ class Kungfu:
         # 前置武功检查
         prereq = self.requirements.get("prerequisite")
         if prereq:
-            learned = character.learned_wuxue
+            learned = character.wuxue_learned
             if prereq not in learned:
                 return False, f"需要先学习{prereq}"
 
@@ -191,7 +191,7 @@ class CharacterWuxueMixin:
     """角色的武学管理."""
 
     @property
-    def learned_wuxue(self) -> dict[str, dict]:
+    def wuxue_learned(self) -> dict[str, dict]:
         """已学武功.
 
         Returns:
@@ -207,11 +207,11 @@ class CharacterWuxueMixin:
         """
         return self.db.get("learned_wuxue", {})
 
-    @learned_wuxue.setter
-    def learned_wuxue(self, value: dict[str, dict]) -> None:
+    @wuxue_learned.setter
+    def wuxue_learned(self, value: dict[str, dict]) -> None:
         self.db.set("learned_wuxue", value)
 
-    async def learn_wuxue(self, kungfu: Kungfu) -> tuple[bool, str]:
+    async def wuxue_learn(self, kungfu: Kungfu) -> tuple[bool, str]:
         """学习武功.
 
         Args:
@@ -226,27 +226,27 @@ class CharacterWuxueMixin:
             return False, reason
 
         # 添加到已学武功
-        learned = self.learned_wuxue
+        learned = self.wuxue_learned
         learned[kungfu.key] = {
             "level": 1,
             "exp": 0,
             "moves": {move.key: 0 for move in kungfu.moves},
             "learned_at": "timestamp",
         }
-        self.learned_wuxue = learned
+        self.wuxue_learned = learned
 
         return True, f"你学会了「{kungfu.name}」！"
 
-    def has_learned(self, kungfu_key: str) -> bool:
+    def wuxue_has_learned(self, kungfu_key: str) -> bool:
         """是否已学某武功."""
-        return kungfu_key in self.learned_wuxue
+        return kungfu_key in self.wuxue_learned
 
-    def get_wuxue_level(self, kungfu_key: str) -> int:
+    def wuxue_get_level(self, kungfu_key: str) -> int:
         """获取武功层数."""
-        wuxue = self.learned_wuxue.get(kungfu_key, {})
+        wuxue = self.wuxue_learned.get(kungfu_key, {})
         return wuxue.get("level", 0)
 
-    async def practice_move(self, kungfu: Kungfu, move: Move) -> tuple[bool, str]:
+    async def wuxue_practice(self, kungfu: Kungfu, move: Move) -> tuple[bool, str]:
         """练习招式，增加熟练度.
 
         Args:
@@ -256,34 +256,34 @@ class CharacterWuxueMixin:
         Returns:
             (是否成功, 消息)
         """
-        if not self.has_learned(kungfu.key):
+        if not self.wuxue_has_learned(kungfu.key):
             return False, "你尚未学会这门武功"
 
-        learned = self.learned_wuxue
+        learned = self.wuxue_learned
         kungfu_data = learned[kungfu.key]
 
         # 增加熟练度
         current_exp = kungfu_data["moves"].get(move.key, 0)
-        gain = self._calculate_practice_gain()
+        gain = self._wuxue_calc_practice_gain()
         kungfu_data["moves"][move.key] = current_exp + gain
 
         # 检查武功升级
-        if self._check_wuxue_level_up(kungfu_data):
+        if self._wuxue_check_level_up(kungfu_data):
             kungfu_data["level"] += 1
             msg = f"「{kungfu.name}」提升至第{kungfu_data['level']}层！"
         else:
             msg = f"你练习了「{move.name}」，熟练度+{gain}"
 
-        self.learned_wuxue = learned
+        self.wuxue_learned = learned
         return True, msg
 
-    def _calculate_practice_gain(self) -> int:
+    def _wuxue_calc_practice_gain(self) -> int:
         """计算练习收益（受悟性影响）."""
         base = 10
         from_wuxing = self.wuxing // 3
         return base + from_wuxing
 
-    def _check_wuxue_level_up(self, kungfu_data: dict) -> bool:
+    def _wuxue_check_level_up(self, kungfu_data: dict) -> bool:
         """检查是否满足升级条件."""
         current_level = kungfu_data["level"]
         total_move_exp = sum(kungfu_data["moves"].values())
@@ -292,12 +292,12 @@ class CharacterWuxueMixin:
         required = current_level * 100
         return total_move_exp >= required
 
-    def get_available_moves(self) -> list[tuple[Kungfu, Move]]:
+    def wuxue_get_moves(self) -> list[tuple[Kungfu, Move]]:
         """获取所有可用招式."""
         from src.game.data.wuxue_registry import get_kungfu
         
         available: list[tuple[Kungfu, Move]] = []
-        learned = self.learned_wuxue
+        learned = self.wuxue_learned
         
         for kungfu_key, kungfu_data in learned.items():
             kungfu = get_kungfu(kungfu_key)
@@ -310,7 +310,7 @@ class CharacterWuxueMixin:
         
         return available
 
-    def get_move_mastery(self, kungfu_key: str, move_key: str) -> int:
+    def wuxue_get_move_mastery(self, kungfu_key: str, move_key: str) -> int:
         """获取招式熟练度.
 
         Args:
@@ -320,12 +320,12 @@ class CharacterWuxueMixin:
         Returns:
             熟练度
         """
-        learned = self.learned_wuxue
+        learned = self.wuxue_learned
         kungfu_data = learned.get(kungfu_key, {})
         moves = kungfu_data.get("moves", {})
         return moves.get(move_key, 0)
 
-    def get_total_mastery(self, kungfu_key: str) -> int:
+    def wuxue_get_total_mastery(self, kungfu_key: str) -> int:
         """获取武功总熟练度.
 
         Args:
@@ -334,7 +334,7 @@ class CharacterWuxueMixin:
         Returns:
             总熟练度
         """
-        learned = self.learned_wuxue
+        learned = self.wuxue_learned
         kungfu_data = learned.get(kungfu_key, {})
         moves = kungfu_data.get("moves", {})
         return sum(moves.values())

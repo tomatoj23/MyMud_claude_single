@@ -255,7 +255,7 @@ class TestEquipmentBoundaryConditions:
         assert result2 is True
         
         # 最终应只有第二把装备
-        equipped = char.get_equipped(EquipmentSlot.MAIN_HAND)
+        equipped = char.equipment_get_item(EquipmentSlot.MAIN_HAND)
         assert equipped.key == "sword2"
 
 

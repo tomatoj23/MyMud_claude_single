@@ -314,7 +314,7 @@ class CombatSession:
             return False, "未指定内功"
         
         # 检查是否学会该内功
-        if not char.has_learned(neigong_key):
+        if not char.wuxue_has_learned(neigong_key):
             return False, "你尚未学会此内功"
         
         # 获取内功信息

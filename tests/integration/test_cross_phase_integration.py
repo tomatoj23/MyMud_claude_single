@@ -408,13 +408,13 @@ class TestComplexGameScenarios:
             await character.equip(item)
 
         # 验证所有装备都已装备
-        equipped_count = sum(1 for slot in EquipmentSlot if character.get_equipped(slot) is not None)
+        equipped_count = sum(1 for slot in EquipmentSlot if character.equipment_get_item(slot) is not None)
         assert equipped_count == 3
 
         # 验证套装统计
         set_counts = {}
         for slot in EquipmentSlot:
-            item = character.get_equipped(slot)
+            item = character.equipment_get_item(slot)
             if item and item.set_name:
                 set_counts[item.set_name] = set_counts.get(item.set_name, 0) + 1
 
