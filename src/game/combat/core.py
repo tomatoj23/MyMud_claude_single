@@ -73,6 +73,23 @@ class CombatAction:
 
 logger = logging.getLogger(__name__)
 
+# 策略注册表（延迟导入避免循环依赖）
+_ACTION_STRATEGIES: dict[str, "CombatActionStrategy"] | None = None
+
+
+def _get_strategies() -> dict[str, "CombatActionStrategy"]:
+    """获取策略注册表（延迟初始化）."""
+    global _ACTION_STRATEGIES
+    if _ACTION_STRATEGIES is None:
+        from .strategy import AttackStrategy, CastStrategy, FleeStrategy, DefendStrategy
+        _ACTION_STRATEGIES = {
+            "kill": AttackStrategy(),
+            "cast": CastStrategy(),
+            "flee": FleeStrategy(),
+            "defend": DefendStrategy(),
+        }
+    return _ACTION_STRATEGIES
+
 
 class CombatSession:
     """即时制战斗会话.
@@ -230,7 +247,7 @@ class CombatSession:
         cmd: str,
         args: dict | None = None,
     ) -> tuple[bool, str]:
-        """处理玩家战斗命令.
+        """处理玩家战斗命令（使用策略模式）.
 
         Args:
             character: 玩家角色
@@ -250,17 +267,27 @@ class CombatSession:
             remaining = combatant.get_remaining_cooldown()
             return False, f"你还不能行动（还需{remaining:.1f}秒）"
 
-        # 执行命令
-        if cmd == "kill":
-            return await self._do_attack(combatant, args)
-        elif cmd == "cast":
-            return await self._do_cast(combatant, args)
-        elif cmd == "flee":
-            return await self._do_flee(combatant, args)
-        elif cmd == "defend":
-            return await self._do_defend(combatant, args)
-
-        return False, f"未知的战斗命令: {cmd}"
+        # 获取策略
+        strategies = _get_strategies()
+        strategy = strategies.get(cmd)
+        
+        if not strategy:
+            return False, f"未知的战斗命令: {cmd}"
+        
+        # 验证
+        valid, msg = strategy.validate(self, combatant, args)
+        if not valid:
+            return False, msg
+        
+        # 执行
+        result = await strategy.execute(self, combatant, args)
+        
+        # 设置冷却
+        if result.success:
+            cooldown = strategy.get_cooldown(args)
+            combatant.set_cooldown(cooldown)
+        
+        return result.success, result.message
 
     async def _do_attack(
         self, combatant: Combatant, args: dict
