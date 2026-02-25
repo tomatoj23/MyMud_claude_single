@@ -28,9 +28,14 @@ class Character(CharacterEquipmentMixin, CharacterWuxueMixin, TypeclassBase):
 
     typeclass_path = "src.game.typeclasses.character.Character"
 
-    def __init__(self, db_model=None):
-        """初始化角色."""
-        super().__init__(db_model)
+    def __init__(self, manager=None, db_model=None):
+        """初始化角色.
+        
+        Args:
+            manager: 对象管理器
+            db_model: 数据库模型实例
+        """
+        super().__init__(manager, db_model)
         self._validator = CharacterValidator()
 
     # ===== 状态验证 =====
