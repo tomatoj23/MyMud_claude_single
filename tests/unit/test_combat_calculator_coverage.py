@@ -62,6 +62,7 @@ class TestCombatCalculatorCoverage:
         
         move = Mock()
         move.wuxue_type = Mock()
+        move.hit_modifier = 0.0  # 设置命中修正
         
         calculator = CombatCalculator()
         
@@ -86,6 +87,7 @@ class TestCombatCalculatorCoverage:
         
         move = Mock()
         move.wuxue_type = Mock()
+        move.hit_modifier = 0.0  # 设置命中修正
         
         calculator = CombatCalculator()
         

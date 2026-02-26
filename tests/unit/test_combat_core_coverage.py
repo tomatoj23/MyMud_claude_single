@@ -315,54 +315,86 @@ class TestHandlePlayerCommand:
 
     @pytest.mark.asyncio
     async def test_handle_command_kill(self, mock_engine, player_char, enemy_char):
-        """测试处理 kill 命令 (228-229)."""
+        """测试处理 kill 命令 (228-229) - 使用策略模式."""
+        from src.game.combat.core import _get_strategies
+        
         session = CombatSession(mock_engine, [player_char, enemy_char], player_char)
         session.participants[1].in_combat = True
         session.participants[1].next_action_time = 0
         
-        with patch.object(session, '_do_attack', new_callable=AsyncMock, return_value=(True, "攻击成功")) as mock_attack:
+        # Mock策略 - validate不是异步的，返回普通值
+        mock_strategy = MagicMock()
+        mock_strategy.validate.return_value = (True, "")
+        mock_strategy.execute = AsyncMock(return_value=MagicMock(success=True, message="攻击成功"))
+        
+        with patch.dict(_get_strategies(), {"kill": mock_strategy}, clear=False):
             success, msg = await session.handle_player_command(player_char, "kill", {"target": enemy_char})
             
-            mock_attack.assert_called_once()
+            mock_strategy.validate.assert_called_once()
+            mock_strategy.execute.assert_called_once()
             assert success is True
 
     @pytest.mark.asyncio
     async def test_handle_command_cast(self, mock_engine, player_char, enemy_char):
-        """测试处理 cast 命令 (230-231)."""
+        """测试处理 cast 命令 (230-231) - 使用策略模式."""
+        from src.game.combat.core import _get_strategies
+        
         session = CombatSession(mock_engine, [player_char, enemy_char], player_char)
         session.participants[1].in_combat = True
         session.participants[1].next_action_time = 0
         
-        with patch.object(session, '_do_cast', new_callable=AsyncMock, return_value=(True, "施法成功")) as mock_cast:
+        # Mock策略 - validate不是异步的，返回普通值
+        mock_strategy = MagicMock()
+        mock_strategy.validate.return_value = (True, "")
+        mock_strategy.execute = AsyncMock(return_value=MagicMock(success=True, message="施法成功"))
+        
+        with patch.dict(_get_strategies(), {"cast": mock_strategy}, clear=False):
             success, msg = await session.handle_player_command(player_char, "cast", {})
             
-            mock_cast.assert_called_once()
+            mock_strategy.validate.assert_called_once()
+            mock_strategy.execute.assert_called_once()
             assert success is True
 
     @pytest.mark.asyncio
     async def test_handle_command_flee(self, mock_engine, player_char, enemy_char):
-        """测试处理 flee 命令 (232-233)."""
+        """测试处理 flee 命令 (232-233) - 使用策略模式."""
+        from src.game.combat.core import _get_strategies
+        
         session = CombatSession(mock_engine, [player_char, enemy_char], player_char)
         session.participants[1].in_combat = True
         session.participants[1].next_action_time = 0
         
-        with patch.object(session, '_do_flee', new_callable=AsyncMock, return_value=(True, "逃跑成功")) as mock_flee:
+        # Mock策略 - validate不是异步的，返回普通值
+        mock_strategy = MagicMock()
+        mock_strategy.validate.return_value = (True, "")
+        mock_strategy.execute = AsyncMock(return_value=MagicMock(success=True, message="逃跑成功"))
+        
+        with patch.dict(_get_strategies(), {"flee": mock_strategy}, clear=False):
             success, msg = await session.handle_player_command(player_char, "flee", {})
             
-            mock_flee.assert_called_once()
+            mock_strategy.validate.assert_called_once()
+            mock_strategy.execute.assert_called_once()
             assert success is True
 
     @pytest.mark.asyncio
     async def test_handle_command_defend(self, mock_engine, player_char, enemy_char):
-        """测试处理 defend 命令 (234-235)."""
+        """测试处理 defend 命令 (234-235) - 使用策略模式."""
+        from src.game.combat.core import _get_strategies
+        
         session = CombatSession(mock_engine, [player_char, enemy_char], player_char)
         session.participants[1].in_combat = True
         session.participants[1].next_action_time = 0
         
-        with patch.object(session, '_do_defend', new_callable=AsyncMock, return_value=(True, "防御成功")) as mock_defend:
+        # Mock策略 - validate不是异步的，返回普通值
+        mock_strategy = MagicMock()
+        mock_strategy.validate.return_value = (True, "")
+        mock_strategy.execute = AsyncMock(return_value=MagicMock(success=True, message="防御成功"))
+        
+        with patch.dict(_get_strategies(), {"defend": mock_strategy}, clear=False):
             success, msg = await session.handle_player_command(player_char, "defend", {})
             
-            mock_defend.assert_called_once()
+            mock_strategy.validate.assert_called_once()
+            mock_strategy.execute.assert_called_once()
             assert success is True
 
     @pytest.mark.asyncio
@@ -505,15 +537,15 @@ class TestDoCast:
         return char
 
     @pytest.mark.asyncio
-    async def test_do_cast_not_implemented(self, mock_engine, player_char):
-        """测试施法功能待实现 (284)."""
+    async def test_do_cast_no_neigong_specified(self, mock_engine, player_char):
+        """测试施法时未指定内功 (284)."""
         session = CombatSession(mock_engine, [player_char], player_char)
         combatant = session.participants[1]
         
         success, msg = await session._do_cast(combatant, {})
         
         assert success is False
-        assert "内功系统待实现" in msg
+        assert "未指定内功" in msg
 
 
 class TestDoFlee:

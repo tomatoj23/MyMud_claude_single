@@ -520,3 +520,5 @@ class CharacterEquipmentMixin:
     def equipment_on_unequip(self, item: Equipment) -> None:
         """卸下时调用."""
         pass
+
+

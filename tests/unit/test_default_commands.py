@@ -65,9 +65,9 @@ class TestCmdLook:
         cmd.args = ""
         
         obj1 = Mock()
-        obj1.key = "箱子"
+        obj1.name = "箱子"
         obj2 = Mock()
-        obj2.key = "桌子"
+        obj2.name = "桌子"
         
         location = Mock()
         location.at_desc.return_value = "房间里。"

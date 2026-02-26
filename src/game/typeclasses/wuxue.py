@@ -338,3 +338,5 @@ class CharacterWuxueMixin:
         kungfu_data = learned.get(kungfu_key, {})
         moves = kungfu_data.get("moves", {})
         return sum(moves.values())
+
+

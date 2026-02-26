@@ -119,11 +119,11 @@ class TestPlayerJourney:
         # 先添加到背包，再装备
         # 将剑移动到玩家位置（模拟放入背包）
         sword.location = player
-        result, msg = await player.equip(sword)
+        result, msg = await player.equipment_equip(sword)
         assert result is True, f"装备失败: {msg}"
         
         # 验证装备加成
-        total_stats = player.get_total_stats()
+        total_stats = player.equipment_get_stats()
         assert total_stats["attack"] > 0
         
         # ========== 阶段3: 任务系统 ==========
@@ -248,16 +248,16 @@ class TestPlayerJourney:
         normal_sword.location = player
         
         # 装备普通剑
-        success, msg = await player.equip(normal_sword)
+        success, msg = await player.equipment_equip(normal_sword)
         assert success, f"装备失败: {msg}"
-        stats1 = player.get_total_stats()
+        stats1 = player.equipment_get_stats()
         
         # 更换为精良剑
-        await player.unequip(EquipmentSlot.MAIN_HAND)
+        await player.equipment_unequip(EquipmentSlot.MAIN_HAND)
         rare_sword.location = player
-        success, msg = await player.equip(rare_sword)
+        success, msg = await player.equipment_equip(rare_sword)
         assert success, f"装备失败: {msg}"
-        stats2 = player.get_total_stats()
+        stats2 = player.equipment_get_stats()
         
         # 精良剑应该有更高攻击力（如果属性存在）
         attack1 = stats1.get("attack", 0)

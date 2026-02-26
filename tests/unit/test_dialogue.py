@@ -85,6 +85,10 @@ class TestDialogueSystem:
         char.menpai = "少林"
         char.is_quest_active = Mock(return_value=False)
         char.is_quest_completed = Mock(return_value=False)
+        char.contents = []  # 添加可迭代的 contents
+        # 设置 db.get 返回字典
+        char.db = Mock()
+        char.db.get = Mock(return_value={})
         return char
 
     @pytest.fixture
@@ -333,16 +337,21 @@ class TestDialogueSystem:
         assert len(available) == 1
 
     def test_check_conditions_has_item(self, dialogue_system, character, npc):
-        """测试拥有物品条件（当前实现为空pass）."""
+        """测试拥有物品条件."""
         responses = [
             Response("选项1", conditions={"has_item": "item1"}),
         ]
         node = DialogueNode(text="对话", responses=responses)
         
-        # has_item 条件当前实现为空pass，应该返回True
+        # 没有物品时应该不可用
         available = dialogue_system.get_available_responses(character, npc, node)
+        assert len(available) == 0
         
-        # 当前实现中has_item条件不检查，所以应该可用
+        # 添加物品后应该可用
+        item = Mock()
+        item.key = "item1"
+        character.contents = [item]
+        available = dialogue_system.get_available_responses(character, npc, node)
         assert len(available) == 1
 
     @pytest.mark.asyncio

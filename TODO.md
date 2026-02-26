@@ -41,9 +41,12 @@
 | - Phase 1 | 紧急修复 | ✅ 已完成 | 100% |
 | - Phase 2 | 架构改进 | ✅ 已完成 | 100% |
 | - Phase 3 | 可选优化 | ✅ 已完成 | 100% |
-| 阶段四 | GUI客户端 | ⏳ 待开始 | 0% |
+| **技术债务** | **全部清偿** | ✅ **已完成** | **51/51** |
+| 阶段四 | GUI客户端 | 🔄 进行中 | 5% |
 | 阶段五 | 内容制作 | ⏳ 待开始 | 0% |
 | 阶段六 | 存档与系统功能 | ⏳ 待开始 | 0% |
+
+**测试状态**: 1,329+ 测试通过 | **债务状态**: 51/51 已清偿
 
 ---
 
@@ -96,6 +99,64 @@ try:
 except Exception:
     pass
 # 断言: target.hp 已恢复到操作前 ✅
+```
+
+---
+
+### 📅 2026-02-25: 后向兼容性清理（已完成）
+
+**工作内容**: 移除Equipment和Wuxue系统的后向兼容别名
+
+**背景**: 
+在Phase 1架构改进中，为了统一Mixin方法命名规范，将Equipment和Wuxue系统的方法添加了`equipment_*`和`wuxue_*`前缀。最初保留了旧方法名作为别名以保证后向兼容，现在确认所有调用已更新，可以安全移除别名。
+
+**完成的任务**:
+- [x] 从 `src/game/typeclasses/equipment.py` 移除所有后向兼容别名
+  - [x] 删除 `equip()` → `equipment_equip()` 的别名
+  - [x] 删除 `unequip()` → `equipment_unequip()` 的别名
+  - [x] 删除 `get_total_stats()` → `equipment_get_stats()` 的别名
+  - [x] 删除 `equipped` 属性 → `equipment_slots` 的别名
+- [x] 从 `src/game/typeclasses/wuxue.py` 移除所有后向兼容别名
+  - [x] 删除 `learn_wuxue()` → `wuxue_learn()` 的别名
+  - [x] 删除 `practice_move()` → `wuxue_practice()` 的别名
+  - [x] 删除 `get_wuxue_level()` → `wuxue_get_level()` 的别名
+  - [x] 删除 `has_learned()` → `wuxue_has_learned()` 的别名
+  - [x] 删除 `get_move_mastery()` → `wuxue_get_move_mastery()` 的别名
+  - [x] 删除 `get_total_mastery()` → `wuxue_get_total_mastery()` 的别名
+  - [x] 删除 `get_available_moves()` → `wuxue_get_moves()` 的别名
+- [x] 更新12个测试文件中的方法调用
+  - [x] `tests/unit/test_equipment.py`
+  - [x] `tests/integration/test_architecture_improvements.py`
+  - [x] `tests/integration/test_chaos_architecture.py`
+  - [x] `tests/integration/test_edge_cases_advanced.py`
+  - [x] `tests/integration/test_comprehensive_gameplay.py`
+  - [x] `tests/integration/test_cross_phase_integration.py`
+  - [x] `tests/integration/test_player_journey.py`
+  - [x] `tests/integration/test_phase2_game_systems.py`
+  - [x] `tests/integration/test_player_journey_simple.py`
+  - [x] `tests/integration/test_api_chaos.py`
+  - [x] `tests/integration/test_chaos_player_behavior.py`
+  - [x] `tests/integration/test_performance_stress.py`
+- [x] 更新架构改进测试，验证旧方法名**不存在**（确认无别名）
+- [x] 运行测试验证：100+核心测试全部通过
+
+**命名规范总结**:
+| 组件 | 命名前缀 | 示例 |
+|:---|:---:|:---|
+| Equipment系统 | `equipment_*` | `equipment_equip()`, `equipment_unequip()` |
+| Wuxue系统 | `wuxue_*` | `wuxue_learn()`, `wuxue_practice()` |
+
+**影响范围**: 无运行时影响，所有内部调用已更新为新方法名
+
+**验证方式**:
+```python
+# ✅ 确认旧方法名不存在
+assert not hasattr(Character, 'equip')  # AttributeError
+assert not hasattr(Character, 'learn_wuxue')  # AttributeError
+
+# ✅ 只能使用新命名
+character.equipment_equip(item)
+character.wuxue_learn(kungfu)
 ```
 
 ### ⚠️ 重点提醒
@@ -388,6 +449,39 @@ except Exception:
 ---
 
 ## 🟣 阶段四：GUI客户端（第8周）
+
+### 📅 2026-02-26 明日工作计划
+
+**目标**: 搭建GUI基础框架，实现引擎与GUI的异步桥接
+
+**任务清单**:
+- [ ] 1. 阅读DEVELOPMENT_PLAN.md阶段四相关章节
+- [ ] 2. 研究现有main_window.py代码结构
+- [ ] 3. **实现qasync桥接模块**
+  - [ ] 创建 `src/gui/async_bridge.py`
+  - [ ] 实现异步事件循环桥接
+  - [ ] 实现GUI信号与引擎回调的连接
+- [ ] 4. **完善主窗口框架**
+  - [ ] 添加菜单栏（游戏、视图、帮助）
+  - [ ] 添加状态栏（连接状态、时间显示）
+  - [ ] 实现窗口布局管理
+- [ ] 5. **创建基础面板**
+  - [ ] 主视图面板（场景描述区域）
+  - [ ] 命令输入面板（输入框+发送按钮）
+- [ ] 6. **编写单元测试**
+  - [ ] 测试异步桥接功能
+  - [ ] 测试信号槽连接
+
+**交付物**:
+- `src/gui/async_bridge.py` - 异步桥接模块
+- 更新的 `src/gui/main_window.py` - 完整主窗口
+- `src/gui/panels/main_view.py` - 主视图面板
+- `src/gui/panels/command_input.py` - 命令输入面板
+- `tests/gui/test_async_bridge.py` - 桥接测试
+
+**预期成果**: 能够启动GUI窗口，显示基本界面框架
+
+---
 
 ### 4.1 基础框架
 

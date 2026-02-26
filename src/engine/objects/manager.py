@@ -602,6 +602,30 @@ class ObjectManager:
         """
         self._dirty_objects.add(obj.id)
 
+    def get_contents_sync(self, location_id: int) -> list[TypeclassBase]:
+        """同步获取指定位置的内容对象（仅从L1缓存）.
+
+        从L1缓存中筛选出 location_id 等于指定值的所有对象。
+        注意：此方法仅返回当前在L1缓存中的对象，可能不包含所有数据。
+        如需完整数据请使用异步的 find(location=...)。
+
+        Args:
+            location_id: 位置对象ID
+
+        Returns:
+            包含的对象列表（仅从L1缓存）
+        """
+        contents: list[TypeclassBase] = []
+
+        for obj_id, ref in self._l1_cache.items():
+            obj = ref()
+            if obj is not None:
+                # 检查对象的 location_id
+                if obj._db_model.location_id == location_id:
+                    contents.append(obj)
+
+        return contents
+
     def clear_cache(self) -> None:
         """清理缓存.
 

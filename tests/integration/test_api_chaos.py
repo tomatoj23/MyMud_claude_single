@@ -270,7 +270,7 @@ class TestMethodCallChaos:
         
         for equip in chaos_equips:
             try:
-                await char.equip(equip)
+                await char.equipment_equip(equip)
             except Exception as e:
                 print(f"equip({type(equip).__name__}): {type(e).__name__}")
         
@@ -284,7 +284,7 @@ class TestMethodCallChaos:
         
         for _ in range(10):
             try:
-                await char.equip(sword)
+                await char.equipment_equip(sword)
             except Exception as e:
                 print(f"Repeated equip: {type(e).__name__}")
         

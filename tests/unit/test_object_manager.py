@@ -569,3 +569,85 @@ class TestCacheManagement:
         assert "l2_cache_size" in stats
         assert "dirty_objects" in stats
         assert stats["dirty_objects"] == 1
+
+
+class TestObjectManagerContentsSync:
+    """ObjectManager.get_contents_sync 同步内容查询测试."""
+
+    @pytest.mark.asyncio
+    async def test_get_contents_sync_empty(self, object_manager: ObjectManager):
+        """测试获取空容器的内容."""
+        # 创建容器
+        container = await object_manager.create(
+            typeclass_path="src.engine.core.typeclass.TypeclassBase",
+            key="container",
+        )
+
+        # 同步获取内容
+        contents = object_manager.get_contents_sync(container.id)
+        assert contents == []
+
+    @pytest.mark.asyncio
+    async def test_get_contents_sync_with_items(self, object_manager: ObjectManager):
+        """测试获取包含物品的容器内容."""
+        # 创建容器
+        container = await object_manager.create(
+            typeclass_path="src.engine.core.typeclass.TypeclassBase",
+            key="container",
+        )
+
+        # 创建两个物品在容器中
+        item1 = await object_manager.create(
+            typeclass_path="src.engine.core.typeclass.TypeclassBase",
+            key="sword",
+            location=container,
+        )
+        item2 = await object_manager.create(
+            typeclass_path="src.engine.core.typeclass.TypeclassBase",
+            key="shield",
+            location=container,
+        )
+
+        # 创建另一个物品不在容器中
+        other = await object_manager.create(
+            typeclass_path="src.engine.core.typeclass.TypeclassBase",
+            key="other",
+        )
+
+        # 同步获取内容
+        contents = object_manager.get_contents_sync(container.id)
+
+        # 验证结果
+        assert len(contents) == 2
+        assert item1 in contents
+        assert item2 in contents
+        assert other not in contents
+
+    @pytest.mark.asyncio
+    async def test_get_contents_sync_only_l1_cache(self, object_manager: ObjectManager):
+        """测试 get_contents_sync 只返回L1缓存中的对象."""
+        # 创建容器和物品
+        container = await object_manager.create(
+            typeclass_path="src.engine.core.typeclass.TypeclassBase",
+            key="container",
+        )
+        item = await object_manager.create(
+            typeclass_path="src.engine.core.typeclass.TypeclassBase",
+            key="item",
+            location=container,
+        )
+
+        # 验证对象在L1缓存中
+        assert object_manager._get_from_l1(item.id) is not None
+
+        # 获取内容
+        contents = object_manager.get_contents_sync(container.id)
+        assert len(contents) == 1
+        assert contents[0].id == item.id
+
+        # 清除L1缓存（模拟对象被回收）
+        object_manager._l1_cache.clear()
+
+        # 再次获取内容，应该为空
+        contents = object_manager.get_contents_sync(container.id)
+        assert contents == []

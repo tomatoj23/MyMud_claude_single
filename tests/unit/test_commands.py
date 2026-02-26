@@ -275,8 +275,10 @@ class TestCommandBase:
 
         obj1 = MockCaller()
         obj1.key = "sword"
+        obj1.name = "长剑"
         obj2 = MockCaller()
         obj2.key = "sword2"
+        obj2.name = "短剑"
         candidates = [obj1, obj2]
 
         result = cmd.search("sword", candidates, multimatch_string="Multiple:")

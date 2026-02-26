@@ -866,7 +866,7 @@ class TestQuestRewards:
             objectives=[
                 QuestObjective(QuestObjectiveType.KILL, "rat", count=1)
             ],
-            rewards={"items": ["sword", "shield"]}
+            rewards={"items": [{"key": "sword", "name": "剑"}, {"key": "shield", "name": "盾"}]}
         )
         await character.accept_quest(quest)
         await character.update_objective("item_quest", 0, 1)
@@ -874,7 +874,7 @@ class TestQuestRewards:
         success, msg = await character.complete_quest("item_quest", quest)
         
         assert success is True
-        assert "获得物品" in msg
+        assert "获得" in msg
 
     @pytest.mark.asyncio
     async def test_give_rewards_wuxue(self, character):

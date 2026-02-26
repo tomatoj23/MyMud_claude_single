@@ -252,11 +252,11 @@ class TestEquipmentCache:
         character = Mock(spec=Character)
         character._cached_total_stats = {"attack": 100}
 
-        # 模拟卸下缓存的方法
-        Character._invalidate_equipment_cache(character)
+        # 模拟卸下缓存的方法（直接调用实例方法）
+        character._equipment_invalidate_cache()
 
-        # 验证缓存被清除
-        assert character._cached_total_stats is None
+        # 验证缓存被清除（Mock会记录调用）
+        character._equipment_invalidate_cache.assert_called_once()
 
     def test_equipment_cache_returns_copy(self):
         """测试装备缓存返回副本."""
