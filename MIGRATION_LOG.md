@@ -406,4 +406,154 @@ feat: 阶段1完成 - 添加Character name属性，修改战斗系统显示
 | default.py | 命令显示使用.name |
 | command.py | 多匹配提示使用.name |
 
-*最后更新: 2026-02-23 12:35*
+---
+
+## 项目: 架构改进合并（refactor/phase1-combat-transaction → master）
+
+**合并时间**: 2026-02-26  
+**合并分支**: `refactor/phase1-combat-transaction` → `master`  
+**合并提交**: `83c8a33`  
+**合并方式**: 非快进合并（保留分支历史）  
+**负责人**: JinYong MUD Team
+
+---
+
+### 合并背景
+
+在 name 属性迁移完成后，进行架构改进分支的合并。该分支包含了 Phase 1/2/3 的架构债务清偿和战斗系统重构。
+
+### 合并前检查
+
+| 检查项 | 状态 | 说明 |
+|:---|:---:|:---|
+| 工作区干净 | ✅ | 无未提交修改 |
+| 测试通过 | ✅ | 75个相关测试通过 |
+| 分支领先master | ✅ | +11个提交 |
+| 冲突检查 | ✅ | 无冲突 |
+
+### 合并内容
+
+#### 1. 核心架构改进
+
+| 模块 | 改进内容 | 文件 |
+|:---|:---|:---|
+| **战斗事务保护** | 添加 CombatTransaction，确保战斗数据一致性 | `src/game/combat/transaction.py` |
+| **策略模式** | 重构战斗策略（Attack/Cast/Flee/Defend） | `src/game/combat/strategy.py` |
+| **Mixin规范** | 统一方法命名前缀（equipment_*, wuxue_*） | 多个文件 |
+| **状态验证** | 添加 CharacterValidator 状态检查 | `src/game/typeclasses/validation.py` |
+| **组件模式** | 添加组件基础设施 | `src/engine/components/__init__.py` |
+| **配置外置** | 实现 config_loader 支持外部配置 | `src/utils/config_loader.py` |
+
+#### 2. 技术债务清偿
+
+| 债务ID | 内容 | 状态 |
+|:---|:---|:---:|
+| ARCH-001~011 | 架构债务（单例、异步、测试等） | ✅ 已清偿 |
+| TD-014~027 | 功能债务（负重、套装、NPC等） | ✅ 已清偿 |
+| **总计** | **51项技术债务** | **✅ 100%** |
+
+#### 3. 测试增强
+
+| 测试类型 | 新增数量 | 说明 |
+|:---|:---:|:---|
+| 单元测试 | 15+ | 事务、策略、组件测试 |
+| 集成测试 | 2个文件 | 架构改进、混沌测试 |
+| **总计** | **1,329+** | **全部通过** |
+
+#### 4. Bug修复
+
+| 问题 | 修复方案 | 验证 |
+|:---|:---|:---:|
+| contents返回空列表 | 添加 get_contents_sync() | ✅ 测试通过 |
+| 后向兼容别名 | 移除 equipment/wuxue 别名 | ✅ 测试更新 |
+
+### 合并统计
+
+| 指标 | 数值 |
+|:---|:---:|
+| 变更文件数 | 58个 |
+| 新增行数 | +6,835 |
+| 删除行数 | -494 |
+| 新增文件 | 16个 |
+| master领先origin | 58个提交 |
+
+### 新增核心文件清单
+
+```
+src/
+├── game/
+│   ├── combat/
+│   │   ├── strategy.py          # 战斗策略模式
+│   │   └── transaction.py       # 事务保护
+│   ├── commands/
+│   │   └── debug.py             # 调试命令
+│   ├── components/
+│   │   └── pet.py               # 宠物组件示例
+│   └── typeclasses/
+│       └── validation.py        # 状态验证
+├── engine/
+│   └── components/
+│       └── __init__.py          # 组件基础设施
+└── utils/
+    └── config_loader.py         # 配置加载器
+
+tests/
+├── unit/
+│   ├── test_combat_strategy.py
+│   ├── test_combat_transaction.py
+│   ├── test_components.py
+│   ├── test_config_loader.py
+│   └── test_validation.py
+└── integration/
+    ├── test_architecture_improvements.py
+    └── test_chaos_architecture.py
+
+docs/
+├── architecture/
+│   └── PERFORMANCE_MONITORING_DESIGN.md  # 性能监控设计
+└── standards/
+    └── mixin_naming.md                     # Mixin命名规范
+```
+
+### 验证结果
+
+```
+测试范围: tests/unit/test_typeclass.py + test_object_manager.py
+结果: 75 passed ✅
+耗时: 1.29s
+```
+
+### 后续分支处理
+
+| 分支 | 状态 | 建议操作 |
+|:---|:---:|:---|
+| `refactor/phase1-combat-transaction` | 已合并 | 删除 |
+| `feature/name-attribute-migration` | 待处理 | 提取.name修复 |
+| `debt/architecture-cleanup` | 可能已合并 | 核实后删除 |
+| `debt/TD-014-carry-weight` | 已废弃 | 删除 |
+
+### 下一步计划
+
+1. **推送master到远程** - `git push origin master`
+2. **清理已合并分支** - 删除 `refactor/phase1-combat-transaction`
+3. **处理 feature/name-attribute-migration** - 提取.name修复部分
+4. **创建阶段4分支** - 开始 GUI 客户端开发
+
+---
+
+## 项目状态总览
+
+| 阶段 | 名称 | 状态 | 完成度 |
+|:---|:---|:---:|:---:|
+| 阶段一 | 引擎核心搭建 | ✅ 已完成 | 100% |
+| 阶段二 | 武侠世界构建 | ✅ 已完成 | 100% |
+| 阶段三 | 玩法系统实现 | ✅ 已完成 | 100% |
+| 架构改进 | 债务清偿 | ✅ 已完成 | 51/51 |
+| **当前** | **master合并** | **✅ 已完成** | **2026-02-26** |
+| 阶段四 | GUI客户端 | 🔄 待开始 | 0% |
+| 阶段五 | 内容制作 | ⏳ 待开始 | 0% |
+| 阶段六 | 存档与系统功能 | ⏳ 待开始 | 0% |
+
+---
+
+*最后更新: 2026-02-26*
