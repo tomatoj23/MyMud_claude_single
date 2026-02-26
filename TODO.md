@@ -450,36 +450,68 @@ character.wuxue_learn(kungfu)
 
 ## 🟣 阶段四：GUI客户端（第8周）
 
-### 📅 2026-02-26 明日工作计划
+### 📅 当前工作计划（2026-02-26更新）
 
-**目标**: 搭建GUI基础框架，实现引擎与GUI的异步桥接
+**master合并完成**: ✅ `refactor/phase1-combat-transaction` 已合并到 master  
+**当前状态**: 准备开始阶段四 GUI客户端开发
 
-**任务清单**:
-- [ ] 1. 阅读DEVELOPMENT_PLAN.md阶段四相关章节
-- [ ] 2. 研究现有main_window.py代码结构
-- [ ] 3. **实现qasync桥接模块**
+---
+
+## 🎯 近期任务（本周）
+
+### 准备阶段
+- [x] 1. 完成架构改进分支合并
+- [x] 2. 更新开发日志和文档
+- [ ] 3. 清理已合并分支
+  - [ ] 删除 `refactor/phase1-combat-transaction`
+  - [ ] 处理 `feature/name-attribute-migration`
+  - [ ] 核实 `debt/architecture-cleanup`
+- [ ] 4. 推送master到远程
+
+### 阶段四启动
+- [ ] 5. 阅读DEVELOPMENT_PLAN.md阶段四相关章节
+- [ ] 6. 研究现有main_window.py代码结构
+- [ ] 7. 创建阶段四开发分支 `phase4-gui-client`
+
+---
+
+### 阶段四核心任务
+
+#### Sprint 1: GUI基础框架
+- [ ] **实现qasync桥接模块**
   - [ ] 创建 `src/gui/async_bridge.py`
   - [ ] 实现异步事件循环桥接
   - [ ] 实现GUI信号与引擎回调的连接
-- [ ] 4. **完善主窗口框架**
+- [ ] **完善主窗口框架**
   - [ ] 添加菜单栏（游戏、视图、帮助）
   - [ ] 添加状态栏（连接状态、时间显示）
   - [ ] 实现窗口布局管理
-- [ ] 5. **创建基础面板**
+- [ ] **创建基础面板**
   - [ ] 主视图面板（场景描述区域）
   - [ ] 命令输入面板（输入框+发送按钮）
-- [ ] 6. **编写单元测试**
+- [ ] **编写单元测试**
   - [ ] 测试异步桥接功能
   - [ ] 测试信号槽连接
 
-**交付物**:
+**Sprint 1 交付物**:
 - `src/gui/async_bridge.py` - 异步桥接模块
 - 更新的 `src/gui/main_window.py` - 完整主窗口
 - `src/gui/panels/main_view.py` - 主视图面板
 - `src/gui/panels/command_input.py` - 命令输入面板
 - `tests/gui/test_async_bridge.py` - 桥接测试
 
-**预期成果**: 能够启动GUI窗口，显示基本界面框架
+**Sprint 1 预期成果**: 能够启动GUI窗口，显示基本界面框架
+
+---
+
+### 可选前置任务（S3性能监控）
+
+根据性能监控设计文档，可选择先实施S3：
+- [ ] 实施 `docs/architecture/PERFORMANCE_MONITORING_DESIGN.md`
+- [ ] 创建性能监控基础设施
+- [ ] 为核心系统添加监控埋点
+
+**说明**: 性能监控对阶段四GUI实时性能面板和阶段六开发者模式有直接价值，建议考虑先实施或并行进行。
 
 ---
 
@@ -680,18 +712,43 @@ character.wuxue_learn(kungfu)
 | 2026-02-23 | 修复战斗系统bug | 修复`character.name`→`character.key`，全部1329个测试通过 |
 | 2026-02-23 | 整理项目并推送GitHub | 清理临时文件，初始化Git仓库，推送至GitHub |
 | 2026-02-23 | 更新文档 | 编写API文档、开发指南、架构说明、技术债务分析 |
+| 2026-02-26 | 全面架构审查 | 审查68个源文件和85个测试文件，输出详细审查报告 |
+| 2026-02-26 | 更新技术债务文档 | 更新TECHNICAL_DEBT.md等3个文档，51/51债务已清偿 |
+| 2026-02-26 | 修复contents属性 | 修复TypeclassBase.contents返回空列表问题，添加4个测试 |
+| 2026-02-26 | 生成性能监控设计 | 创建PERFORMANCE_MONITORING_DESIGN.md（1011行详细设计） |
+| 2026-02-26 | 合并架构改进分支 | `refactor/phase1-combat-transaction` → `master`，58文件变更 |
+| 2026-02-26 | 更新开发日志 | 更新MIGRATION_LOG.md和DEVELOPMENT_PLAN.md，记录合并详情 |
 
 ---
 
 ## 🚀 下一步行动
 
-**明天继续：**
+### 立即执行（今天）
 
-1. **阶段四：GUI客户端**（优先级：高）
-   - PySide6基础框架搭建
-   - 消息总线与GUI集成
-   - 主窗口和面板系统
+1. **推送master到远程**
+   ```bash
+   git push origin master
+   ```
+
+2. **清理已合并分支**
+   ```bash
+   git branch -d refactor/phase1-combat-transaction
+   ```
+
+### 本周计划
+
+3. **启动阶段四：GUI客户端**（优先级：高）
+   - 创建开发分支 `git checkout -b phase4-gui-client`
+   - 实现qasync异步桥接
+   - 搭建主窗口框架
    - 预计时间：1周
+
+### 可选任务
+
+4. **实施S3性能监控**（优先级：中）
+   - 已生成详细设计文档
+   - 对阶段四GUI性能面板和阶段六开发者模式有价值
+   - 可与GUI开发并行进行
 
 **已完成准备：**
 - ✅ 消息总线系统（MessageBus）
