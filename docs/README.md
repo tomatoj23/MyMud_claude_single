@@ -31,16 +31,29 @@
 | [name属性迁移规划](./architecture/name_attribute_migration_plan.md) | 为Character添加name属性的详细规划 |
 | [迁移路线图A→B](./architecture/migration_roadmap_a_to_b.md) | 方案A到方案B的渐进式过渡路线图 |
 
-### 其他文档
+### 性能与设计
 
 | 文档 | 说明 |
 |:---|:---|
 | [性能优化设计](./performance_optimization_design.md) | 性能优化架构设计 |
 | [性能优化实现](./performance_optimizations.md) | 性能优化具体实现 |
-| [技术债务报告](./tech_debt_report.md) | 历史技术债务报告 |
+| [性能监控设计](./architecture/PERFORMANCE_MONITORING_DESIGN.md) | 运行时性能监控方案（S3）|
+
+### 项目规划
+
+| 文档 | 说明 |
+|:---|:---|
+| [技术债务报告](./tech_debt_report.md) | 技术债务清偿报告（2026-02-26更新）|
 | [开发计划](../DEVELOPMENT_PLAN.md) | 详细开发路线图 |
 | [任务清单](../TODO.md) | 当前开发任务状态 |
+| [迁移日志](../MIGRATION_LOG.md) | 功能迁移和架构改进记录 |
 | [技术实现研究](../单机版金庸武侠文字MUD技术实现与游戏设计研究.md) | 技术选型和游戏设计研究 |
+
+### 规范与标准
+
+| 文档 | 说明 |
+|:---|:---|
+| [Mixin命名规范](./standards/mixin_naming.md) | Mixin方法命名规范 |
 
 ---
 
@@ -64,6 +77,21 @@
 
 ---
 
+### 归档文档
+
+以下文档已归档，供历史参考：
+
+| 文档 | 说明 | 归档位置 |
+|:---|:---|:---|
+| 架构分析报告 | Phase 1/2/3架构分析 | `docs/architecture/archive/analysis/` |
+| 实施手册 | 架构改进实施指南 | `docs/architecture/archive/guides/` |
+| 路线图 | 架构改进路线图 | `docs/architecture/archive/planning/` |
+| 债务详细清单 | 技术债务详细分析 | `docs/architecture/archive/` |
+| 测试报告 | 历史测试报告 | `docs/archive/test_reports/` |
+| 工作流程 | 架构改进工作流 | `docs/archive/workflow/` |
+
+---
+
 ## 文档状态
 
 | 文档 | 状态 | 最后更新 |
@@ -75,6 +103,8 @@
 | 架构概述 | ✅ 完整 | 2026-02-23 |
 | 数据流文档 | ✅ 完整 | 2026-02-23 |
 | 技术债务分析 | ✅ 完整 | 2026-02-23 |
+| 性能监控设计 | ✅ 完整 | 2026-02-26 |
+| 技术债务报告 | ✅ 完整 | 2026-02-26 |
 
 ---
 
@@ -96,4 +126,4 @@
 
 ---
 
-*最后更新: 2026-02-23*
+*最后更新: 2026-02-26*
