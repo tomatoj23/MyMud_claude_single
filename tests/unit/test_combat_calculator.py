@@ -147,6 +147,8 @@ class TestCombatCalculator:
         """测试使用招式的伤害计算."""
         move = Mock()
         move.wuxue_type = None  # 简化测试
+        move.hit_modifier = 0.0  # 设置命中修正
+        move.damage_multiplier = 1.5  # 设置伤害倍率
         
         with patch('src.game.combat.calculator.random') as mock_random:
             mock_random.random.return_value = 0.1  # 命中

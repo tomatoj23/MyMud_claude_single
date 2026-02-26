@@ -285,38 +285,38 @@ class TestCharacterWuxueMixin:
     def test_default_learned_wuxue_empty(self):
         """测试默认没有学过武功."""
         char = MockCharacter()
-        assert char.learned_wuxue == {}
+        assert char.wuxue_learned == {}
 
     def test_has_learned(self):
         """测试检查是否学过武功."""
         char = MockCharacter()
-        char.learned_wuxue = {"luohanquan": {"level": 1}}
-        assert char.has_learned("luohanquan")
-        assert not char.has_learned("nonexistent")
+        char.wuxue_learned = {"luohanquan": {"level": 1}}
+        assert char.wuxue_has_learned("luohanquan")
+        assert not char.wuxue_has_learned("nonexistent")
 
     def test_get_wuxue_level(self):
         """测试获取武功层数."""
         char = MockCharacter()
-        char.learned_wuxue = {"luohanquan": {"level": 3}}
-        assert char.get_wuxue_level("luohanquan") == 3
-        assert char.get_wuxue_level("nonexistent") == 0
+        char.wuxue_learned = {"luohanquan": {"level": 3}}
+        assert char.wuxue_get_level("luohanquan") == 3
+        assert char.wuxue_get_level("nonexistent") == 0
 
     def test_get_move_mastery(self):
         """测试获取招式熟练度."""
         char = MockCharacter()
-        char.learned_wuxue = {
+        char.wuxue_learned = {
             "luohanquan": {"moves": {"move1": 50, "move2": 30}}
         }
-        assert char.get_move_mastery("luohanquan", "move1") == 50
-        assert char.get_move_mastery("luohanquan", "nonexistent") == 0
+        assert char.wuxue_get_move_mastery("luohanquan", "move1") == 50
+        assert char.wuxue_get_move_mastery("luohanquan", "nonexistent") == 0
 
     def test_get_total_mastery(self):
         """测试获取武功总熟练度."""
         char = MockCharacter()
-        char.learned_wuxue = {
+        char.wuxue_learned = {
             "luohanquan": {"moves": {"move1": 50, "move2": 30}}
         }
-        assert char.get_total_mastery("luohanquan") == 80
+        assert char.wuxue_get_total_mastery("luohanquan") == 80
 
     def test_calculate_practice_gain(self):
         """测试计算练习收益."""
@@ -325,7 +325,7 @@ class TestCharacterWuxueMixin:
         char = MockCharacter()
         char.wuxing = 18
         # 基础10 + 悟性/3 = 10 + 6 = 16
-        gain = CharacterWuxueMixin._calculate_practice_gain(char)
+        gain = CharacterWuxueMixin._wuxue_calc_practice_gain(char)
         assert gain == 16
 
     def test_check_wuxue_level_up(self):
@@ -335,7 +335,7 @@ class TestCharacterWuxueMixin:
         char = MockCharacter()
         # 当前1层，需要100熟练度才能升到2层
         kungfu_data = {"level": 1, "moves": {"m1": 60, "m2": 40}}
-        should_level_up = CharacterWuxueMixin._check_wuxue_level_up(char, kungfu_data)
+        should_level_up = CharacterWuxueMixin._wuxue_check_level_up(char, kungfu_data)
         assert should_level_up  # 总熟练度100，刚好达到
 
     def test_check_wuxue_not_level_up(self):
@@ -344,5 +344,5 @@ class TestCharacterWuxueMixin:
 
         char = MockCharacter()
         kungfu_data = {"level": 1, "moves": {"m1": 30, "m2": 40}}
-        should_level_up = CharacterWuxueMixin._check_wuxue_level_up(char, kungfu_data)
+        should_level_up = CharacterWuxueMixin._wuxue_check_level_up(char, kungfu_data)
         assert not should_level_up  # 总熟练度70，不够100

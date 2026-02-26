@@ -178,7 +178,7 @@ class TestCharacterWuxueMixin:
         from src.game.typeclasses.wuxue import CharacterWuxueMixin
         
         char = MagicMock(spec=CharacterWuxueMixin)
-        char.learned_wuxue = {
+        char.wuxue_learned = {
             "shaolin_jian": {
                 "level": 1,
                 "moves": {"move1": 10, "move2": 20}
@@ -190,7 +190,7 @@ class TestCharacterWuxueMixin:
         }
         
         # 绑定真实方法
-        char.get_available_moves = lambda: CharacterWuxueMixin.get_available_moves(char)
+        char.wuxue_get_moves = lambda: CharacterWuxueMixin.wuxue_get_moves(char)
         
         return char
     
@@ -221,7 +221,7 @@ class TestCharacterWuxueMixin:
         register_kungfu(wudang_jian)
         
         # 获取可用招式
-        moves = mock_character.get_available_moves()
+        moves = mock_character.wuxue_get_moves()
         
         assert len(moves) == 3  # 2个少林招式 + 1个武当招式
         
@@ -243,7 +243,7 @@ class TestCharacterWuxueMixin:
         register_kungfu(shaolin_jian)
         # 不注册 wudang_jian
         
-        moves = mock_character.get_available_moves()
+        moves = mock_character.wuxue_get_moves()
         
         # 只返回已注册武功的招式
         assert len(moves) == 1
@@ -253,8 +253,8 @@ class TestCharacterWuxueMixin:
         from src.game.typeclasses.wuxue import CharacterWuxueMixin
         
         char = MagicMock(spec=CharacterWuxueMixin)
-        char.learned_wuxue = {}
-        char.get_available_moves = lambda: CharacterWuxueMixin.get_available_moves(char)
+        char.wuxue_learned = {}
+        char.wuxue_get_moves = lambda: CharacterWuxueMixin.wuxue_get_moves(char)
         
-        moves = char.get_available_moves()
+        moves = char.wuxue_get_moves()
         assert len(moves) == 0

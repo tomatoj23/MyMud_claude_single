@@ -197,22 +197,18 @@ class TestEquipmentMixinSetBonus:
             EquipmentSlot.FEET: mock_equipment("江湖轻甲", EquipmentSlot.FEET),
         }
         
-        def mock_get_equipped(slot):
-            return equipped.get(slot)
-        
-        mixin.get_equipped = mock_get_equipped
-        
-        # 绑定真实方法
+        # 绑定真实方法（使用新的前缀命名）
         from src.game.typeclasses.equipment import CharacterEquipmentMixin
-        mixin.get_set_bonuses = lambda: CharacterEquipmentMixin.get_set_bonuses(mixin)
-        mixin.get_total_set_stats = lambda: CharacterEquipmentMixin.get_total_set_stats(mixin)
-        mixin.get_set_info = lambda: CharacterEquipmentMixin.get_set_info(mixin)
+        mixin.equipment_get_item = lambda slot: equipped.get(slot)
+        mixin.equipment_get_set_bonuses = lambda: CharacterEquipmentMixin.equipment_get_set_bonuses(mixin)
+        mixin.equipment_get_set_stats = lambda: CharacterEquipmentMixin.equipment_get_set_stats(mixin)
+        mixin.equipment_get_set_info = lambda: CharacterEquipmentMixin.equipment_get_set_info(mixin)
         
         return mixin
     
     def test_get_set_bonuses_counts(self, mixin_with_sets):
         """测试套装件数统计."""
-        bonuses = mixin_with_sets.get_set_bonuses()
+        bonuses = mixin_with_sets.equipment_get_set_bonuses()
         
         # 应该有少林僧衣的统计
         assert "少林僧衣" in bonuses
@@ -220,7 +216,7 @@ class TestEquipmentMixinSetBonus:
     
     def test_get_set_bonuses_stats(self, mixin_with_sets):
         """测试套装属性加成."""
-        bonuses = mixin_with_sets.get_set_bonuses()
+        bonuses = mixin_with_sets.equipment_get_set_bonuses()
         
         shaolin_bonus = bonuses.get("少林僧衣", {})
         stats = shaolin_bonus.get("stats", {})
@@ -229,7 +225,7 @@ class TestEquipmentMixinSetBonus:
     
     def test_get_total_set_stats(self, mixin_with_sets):
         """测试总属性计算."""
-        total = mixin_with_sets.get_total_set_stats()
+        total = mixin_with_sets.equipment_get_set_stats()
         
         # 少林2件效果 + 根骨
         assert "constitution" in total
@@ -237,7 +233,7 @@ class TestEquipmentMixinSetBonus:
     
     def test_get_set_info(self, mixin_with_sets):
         """测试套装信息显示."""
-        info = mixin_with_sets.get_set_info()
+        info = mixin_with_sets.equipment_get_set_info()
         
         # 应该返回两个套装的信息
         assert len(info) == 2

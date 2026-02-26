@@ -181,7 +181,7 @@ class TestSchedulerWithGameSystems:
                 "durability": (100, 100),
             },
         )
-        await character.equip(armor)
+        await character.equipment_equip(armor)
 
         initial_durability = armor.durability[0]
 
@@ -405,16 +405,16 @@ class TestComplexGameScenarios:
 
         # 装备所有套装部件
         for item in items:
-            await character.equip(item)
+            await character.equipment_equip(item)
 
         # 验证所有装备都已装备
-        equipped_count = sum(1 for slot in EquipmentSlot if character.get_equipped(slot) is not None)
+        equipped_count = sum(1 for slot in EquipmentSlot if character.equipment_get_item(slot) is not None)
         assert equipped_count == 3
 
         # 验证套装统计
         set_counts = {}
         for slot in EquipmentSlot:
-            item = character.get_equipped(slot)
+            item = character.equipment_get_item(slot)
             if item and item.set_name:
                 set_counts[item.set_name] = set_counts.get(item.set_name, 0) + 1
 
@@ -443,15 +443,15 @@ class TestComplexGameScenarios:
             moves=[move],
         )
 
-        await character.learn_wuxue(kungfu)
+        await character.wuxue_learn(kungfu)
 
-        initial_mastery = character.get_move_mastery("武当长拳", "野马分鬃")
+        initial_mastery = character.wuxue_get_move_mastery("武当长拳", "野马分鬃")
 
         # 直接进行多次练习（不依赖调度器定时）
         for _ in range(5):
-            await character.practice_move(kungfu, move)
+            await character.wuxue_practice(kungfu, move)
 
-        final_mastery = character.get_move_mastery("武当长拳", "野马分鬃")
+        final_mastery = character.wuxue_get_move_mastery("武当长拳", "野马分鬃")
         
         # 验证熟练度增加了
         assert final_mastery > initial_mastery, f"熟练度应该从{initial_mastery}增加到更高，实际是{final_mastery}"

@@ -156,7 +156,8 @@ class SmartAI(CombatAI):
             combat = character.combat_session
             if hasattr(combat, 'get_alive_enemies'):
                 enemies = combat.get_alive_enemies(character)
-                if enemies:
+                # 确保 enemies 是列表且不为空
+                if enemies and isinstance(enemies, (list, tuple)) and len(enemies) > 0:
                     return enemies[0]
         return None
     
@@ -230,14 +231,15 @@ class SmartAI(CombatAI):
             return None
 
         # 获取对手信息
-        opponent = self._get_main_opponent(character)
+        opponent = self._get_main_opponent(target)
         if opponent:
             opponent_type = self._get_opponent_wuxue_type(opponent)
             
             # 基于克制关系选择
-            counter_move = self._select_counter_move(moves, opponent_type)
-            if counter_move:
-                return counter_move
+            if opponent_type:
+                counter_move = self._select_counter_move(moves, opponent_type)
+                if counter_move:
+                    return counter_move
         
         # 回退：选择伤害最高的招式 (TD-027)
         return self._select_highest_damage_move(moves)

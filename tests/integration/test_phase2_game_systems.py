@@ -155,12 +155,12 @@ class TestEquipmentSystemFlow:
         base_attack = character.get_attack()
 
         # 装备武器
-        success, msg = await character.equip(sword)
+        success, msg = await character.equipment_equip(sword)
         assert success is True
-        assert character.equipped.get("main_hand") == sword.id
+        assert character.equipment_slots.get("main_hand") == sword.id
 
         # 验证装备加成通过 get_total_stats 计算
-        total_stats = character.get_total_stats()
+        total_stats = character.equipment_get_stats()
         assert total_stats.get("attack") == 20
         assert total_stats.get("agility") == 5
 
@@ -212,10 +212,10 @@ class TestEquipmentSystemFlow:
         )
 
         # 装备
-        await character.equip(armor)
+        await character.equipment_equip(armor)
 
         # 验证属性加成
-        total_stats = character.get_total_stats()
+        total_stats = character.equipment_get_stats()
         assert total_stats.get("defense") == 30
 
         # 损坏装备
@@ -223,13 +223,13 @@ class TestEquipmentSystemFlow:
         assert armor.is_broken is True
 
         # 损坏装备不应提供属性加成
-        total_stats = character.get_total_stats()
+        total_stats = character.equipment_get_stats()
         assert total_stats.get("defense", 0) == 0
 
         # 卸下装备
-        success, msg = await character.unequip(EquipmentSlot.BODY)
+        success, msg = await character.equipment_unequip(EquipmentSlot.BODY)
         assert success is True
-        assert character.equipped.get("body") is None
+        assert character.equipment_slots.get("body") is None
 
     @pytest.mark.asyncio
     async def test_equip_binding(self, game_engine: GameEngine):
@@ -253,7 +253,7 @@ class TestEquipmentSystemFlow:
         assert sword.is_bound is False
 
         # 装备后绑定
-        await character.equip(sword)
+        await character.equipment_equip(sword)
         assert sword.is_bound is True
 
 
@@ -291,10 +291,10 @@ class TestWuxueSystemFlow:
         assert can_learn is True
 
         # 学习武功
-        success, msg = await character.learn_wuxue(kungfu)
+        success, msg = await character.wuxue_learn(kungfu)
         assert success is True
-        assert character.has_learned("罗汉拳") is True
-        assert character.get_wuxue_level("罗汉拳") == 1
+        assert character.wuxue_has_learned("罗汉拳") is True
+        assert character.wuxue_get_level("罗汉拳") == 1
 
     @pytest.mark.asyncio
     async def test_practice_and_level_up(self, game_engine: GameEngine):
@@ -316,15 +316,15 @@ class TestWuxueSystemFlow:
         )
 
         # 学习武功
-        await character.learn_wuxue(kungfu)
+        await character.wuxue_learn(kungfu)
 
-        initial_level = character.get_wuxue_level("武当长拳")
+        initial_level = character.wuxue_get_level("武当长拳")
 
         # 练习招式直到升级
         for _ in range(110):  # 1级需要100熟练度
-            await character.practice_move(kungfu, move)
+            await character.wuxue_practice(kungfu, move)
 
-        assert character.get_wuxue_level("武当长拳") > initial_level
+        assert character.wuxue_get_level("武当长拳") > initial_level
 
     @pytest.mark.asyncio
     async def test_counter_matrix(self, game_engine: GameEngine):
@@ -526,9 +526,9 @@ class TestCrossSystemIntegration:
             },
         )
 
-        # 基础属性
-        base_attack = character.get_attack()
-        base_defense = character.get_defense()
+        # 基础属性（力量20*2=40攻击，体质18=18防御）
+        base_attack = character.get_attack()  # 40
+        base_defense = character.get_defense()  # 18
 
         # 装备武器
         sword = await game_engine.objects.create(
@@ -540,7 +540,7 @@ class TestCrossSystemIntegration:
                 "stats_bonus": {"attack": 50, "agility": 10},
             },
         )
-        await character.equip(sword)
+        await character.equipment_equip(sword)
 
         # 装备护甲
         armor = await game_engine.objects.create(
@@ -552,17 +552,17 @@ class TestCrossSystemIntegration:
                 "stats_bonus": {"defense": 40},
             },
         )
-        await character.equip(armor)
+        await character.equipment_equip(armor)
 
         # 验证装备加成通过 get_total_stats
-        total_stats = character.get_total_stats()
+        total_stats = character.equipment_get_stats()
         assert total_stats.get("attack") == 50
         assert total_stats.get("defense") == 40
         assert total_stats.get("agility") == 10
 
-        # 攻击防御基础值不变（装备加成通过额外方式计算）
-        assert character.get_attack() == base_attack
-        assert character.get_defense() == base_defense
+        # 攻击防御现在包含装备加成（通过get_attack/get_defense计算）
+        assert character.get_attack() == base_attack + 50  # 40 + 50
+        assert character.get_defense() == base_defense + 40  # 18 + 40
 
     @pytest.mark.asyncio
     async def test_menpai_equipment_restriction(self, game_engine: GameEngine):
@@ -676,7 +676,7 @@ class TestCrossSystemIntegration:
                 "stats_bonus": {"attack": 30},
             },
         )
-        await attacker.equip(sword)
+        await attacker.equipment_equip(sword)
 
         # 给防御者装备护甲
         armor = await game_engine.objects.create(
@@ -688,15 +688,15 @@ class TestCrossSystemIntegration:
                 "stats_bonus": {"defense": 25},
             },
         )
-        await defender.equip(armor)
+        await defender.equipment_equip(armor)
 
         # 验证战斗属性
         assert attacker.get_attack() > 0
         assert defender.get_defense() > 0
 
         # 验证装备加成
-        assert attacker.get_total_stats().get("attack") == 30
-        assert defender.get_total_stats().get("defense") == 25
+        assert attacker.equipment_get_stats().get("attack") == 30
+        assert defender.equipment_get_stats().get("defense") == 25
 
         # 学习武功
         kungfu = Kungfu(
@@ -707,10 +707,10 @@ class TestCrossSystemIntegration:
             requirements={"level": 10},
             moves=[Move(key="亢龙有悔", name="亢龙有悔", wuxue_type=WuxueType.ZHANG, mp_cost=30)],
         )
-        await attacker.learn_wuxue(kungfu)
+        await attacker.wuxue_learn(kungfu)
 
         # 验证武功学习成功
-        assert attacker.has_learned("降龙十八掌") is True
+        assert attacker.wuxue_has_learned("降龙十八掌") is True
 
 
 class TestPersistence:
@@ -749,7 +749,7 @@ class TestPersistence:
                 "stats_bonus": {"attack": 100},
             },
         )
-        await character.equip(sword)
+        await character.equipment_equip(sword)
 
         char_id = character.id
         await engine1.stop()

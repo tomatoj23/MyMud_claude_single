@@ -303,7 +303,7 @@ class TestStressScenarios:
         # 快速切换装备50次
         start_time = time.time()
         for i in range(50):
-            await char.equip(equipments[i % len(equipments)])
+            await char.equipment_equip(equipments[i % len(equipments)])
         
         elapsed = time.time() - start_time
         print(f"50次装备切换耗时: {elapsed:.3f}秒")

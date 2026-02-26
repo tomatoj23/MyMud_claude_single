@@ -148,7 +148,7 @@ class TestIllogicalOperationSequences:
         
         # 尝试装备不在背包里的物品（应该失败或处理得当）
         try:
-            result = await char.equip(sword)
+            result = await char.equipment_equip(sword)
             # 根据实现，可能返回False或抛出异常
         except Exception as e:
             print(f"Equip before obtain: {e}")
@@ -266,8 +266,8 @@ class TestStatePollution:
         
         # 死亡状态下尝试各种操作
         dead_actions = [
-            lambda: char.equip(None) if hasattr(char, 'equip') else None,
-            lambda: char.unequip(EquipmentSlot.MAIN_HAND) if hasattr(char, 'unequip') else None,
+            lambda: char.equipment_equip(None) if hasattr(char, 'equipment_equip') else None,
+            lambda: char.equipment_unequip(EquipmentSlot.MAIN_HAND) if hasattr(char, 'equipment_unequip') else None,
             lambda: char.move("north") if hasattr(char, 'move') else None,
             lambda: char.attack(None) if hasattr(char, 'attack') else None,
             lambda: char.use_item(None) if hasattr(char, 'use_item') else None,
@@ -313,7 +313,7 @@ class TestStatePollution:
         try:
             if hasattr(char, 'in_combat'):
                 char.in_combat = True
-                await char.equip(sword)
+                await char.equipment_equip(sword)
         except Exception as e:
             print(f"Equip while in combat: {e}")
         
@@ -484,10 +484,10 @@ class TestDataPollution:
         
         # 尝试用错误类型调用方法
         type_confusion_tests = [
-            lambda: char.equip("string_instead_of_equipment") if hasattr(char, 'equip') else None,
-            lambda: char.equip(12345) if hasattr(char, 'equip') else None,
-            lambda: char.equip(None) if hasattr(char, 'equip') else None,
-            lambda: char.equip(char) if hasattr(char, 'equip') else None,  # 自己装备自己
+            lambda: char.equipment_equip("string_instead_of_equipment") if hasattr(char, 'equipment_equip') else None,
+            lambda: char.equipment_equip(12345) if hasattr(char, 'equipment_equip') else None,
+            lambda: char.equipment_equip(None) if hasattr(char, 'equipment_equip') else None,
+            lambda: char.equipment_equip(char) if hasattr(char, 'equipment_equip') else None,  # 自己装备自己
             lambda: char.move(123) if hasattr(char, 'move') else None,  # 数字作为方向
             lambda: char.move(None) if hasattr(char, 'move') else None,
         ]
@@ -814,9 +814,9 @@ class TestCrazyPlayerBehavior:
             target = random.choice(items) if items else None
             try:
                 if op == "equip" and target:
-                    await char.equip(target)
+                    await char.equipment_equip(target)
                 elif op == "unequip":
-                    await char.unequip(EquipmentSlot.MAIN_HAND)
+                    await char.equipment_unequip(EquipmentSlot.MAIN_HAND)
                 # 其他操作...
             except Exception as e:
                 print(f"Inventory chaos: {e}")

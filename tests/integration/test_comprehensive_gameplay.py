@@ -361,19 +361,19 @@ class TestComplexPlayerJourney:
         jade.location = player
         
         # 记录装备前属性（使用包含装备加成的总属性）
-        total_stats_before = player.get_total_stats()
+        total_stats_before = player.equipment_get_stats()
         attack_before = total_stats_before.get("attack", 0)
         defense_before = total_stats_before.get("defense", 0)
         
         # 装备所有装备
         for item in [sword, helmet, armor, jade]:
-            result, msg = await player.equip(item)
+            result, msg = await player.equipment_equip(item)
             # Equipment 使用 set_name/get_desc 或直接访问 key
             item_name = getattr(item, 'key', 'unknown')
             assert result is True, f"装备 {item_name} 失败: {msg}"
         
         # 验证属性提升
-        total_stats_after = player.get_total_stats()
+        total_stats_after = player.equipment_get_stats()
         attack_after = total_stats_after.get("attack", 0)
         defense_after = total_stats_after.get("defense", 0)
         assert attack_after > attack_before, "装备武器后攻击力应提升"
@@ -724,7 +724,7 @@ class TestComplexPlayerJourney:
             # 装备物品
             sword = equipment_set["sword"]
             sword.location = player
-            await player.equip(sword)
+            await player.equipment_equip(sword)
             
             # 保存
             engine.objects.mark_dirty(player)

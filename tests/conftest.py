@@ -61,9 +61,13 @@ async def engine() -> AsyncGenerator[GameEngine, None]:
     # 尝试清理资源
     try:
         import asyncio
-        await asyncio.wait_for(eng._save_all_objects(), timeout=2.0)
-    except asyncio.TimeoutError:
-        pass  # 超时继续
+        # 新引擎可能不需要手动保存或方法名不同
+        if hasattr(eng, '_save_all_objects'):
+            await asyncio.wait_for(eng._save_all_objects(), timeout=2.0)
+        elif hasattr(eng.objects, 'save_all'):
+            await asyncio.wait_for(eng.objects.save_all(), timeout=2.0)
+    except (asyncio.TimeoutError, AttributeError):
+        pass  # 忽略清理错误
 
 
 @pytest_asyncio.fixture

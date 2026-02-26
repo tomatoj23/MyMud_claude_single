@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Optional
 from src.engine.core.typeclass import TypeclassBase
 from src.game.typeclasses.equipment import CharacterEquipmentMixin
 from src.game.typeclasses.wuxue import CharacterWuxueMixin
+from src.game.typeclasses.validation import CharacterValidator
 
 if TYPE_CHECKING:
     pass
@@ -26,6 +27,31 @@ class Character(CharacterEquipmentMixin, CharacterWuxueMixin, TypeclassBase):
     """
 
     typeclass_path = "src.game.typeclasses.character.Character"
+
+    def __init__(self, manager=None, db_model=None):
+        """初始化角色.
+        
+        Args:
+            manager: 对象管理器
+            db_model: 数据库模型实例
+        """
+        super().__init__(manager, db_model)
+        self._validator = CharacterValidator()
+
+    # ===== 状态验证 =====
+    
+    def validate_state(self) -> list[str]:
+        """验证状态一致性，返回错误列表."""
+        errors = self._validator.validate(self)
+        return [f"[{e.field}] {e.message}: 当前={e.current_value}" for e in errors]
+    
+    def fix_state(self) -> list[str]:
+        """自动修复状态问题."""
+        return self._validator.fix(self)
+    
+    def is_state_valid(self) -> bool:
+        """检查状态是否有效."""
+        return len(self.validate_state()) == 0
 
     # ===== 显示名称 =====
     @property
@@ -227,12 +253,14 @@ class Character(CharacterEquipmentMixin, CharacterWuxueMixin, TypeclassBase):
     def get_attack(self) -> int:
         """计算攻击力（基础 + 装备 + BUFF）."""
         base = self.attributes.get("strength", 10) * 2
-        return base
+        equipment = self.equipment_get_attack_bonus()
+        return base + equipment
 
     def get_defense(self) -> int:
         """计算防御力."""
         base = self.attributes.get("constitution", 10)
-        return base
+        equipment = self.equipment_get_defense_bonus()
+        return base + equipment
 
     def get_agility(self) -> int:
         """计算敏捷（影响闪避、命中）."""
@@ -282,9 +310,7 @@ class Character(CharacterEquipmentMixin, CharacterWuxueMixin, TypeclassBase):
             装备负重加成值
         """
         # 从装备系统中获取加成
-        # 目前装备系统未完全实现，返回0
-        # TODO: 集成装备系统后完善
-        return 0
+        return self.equipment_get_stats().get("max_weight", 0)
 
     def can_carry(self, item: "Item") -> tuple[bool, str]:
         """检查是否可以携带指定物品.

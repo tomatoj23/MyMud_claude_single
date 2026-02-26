@@ -214,7 +214,7 @@ class TestCharacterEquipmentMixin:
 
     def test_default_equipped_empty(self, character):
         """测试默认装备栏为空."""
-        assert character.equipped == {}
+        assert character.equipment_slots == {}
 
     @pytest.mark.asyncio
     async def test_equip_success(self, character, equipment):
@@ -227,16 +227,16 @@ class TestCharacterEquipmentMixin:
         # 设置装备的 location 为 character
         equipment._db_model.location_id = character.id
 
-        success, msg = await character.equip(equipment)
+        success, msg = await character.equipment_equip(equipment)
         assert success, f"装备失败: {msg}"
         assert "装备成功" in msg
-        assert character.equipped[EquipmentSlot.MAIN_HAND.value] == equipment.id
+        assert character.equipment_slots[EquipmentSlot.MAIN_HAND.value] == equipment.id
 
     @pytest.mark.asyncio
     async def test_equip_not_in_inventory(self, character, equipment):
         """测试不在背包中时不能装备."""
         equipment._db_model.location_id = None  # 不在背包中
-        success, msg = await character.equip(equipment)
+        success, msg = await character.equipment_equip(equipment)
         assert not success
         assert "物品不在背包中" in msg
 
@@ -248,18 +248,18 @@ class TestCharacterEquipmentMixin:
         character._manager._cache[equipment.id] = equipment
         equipment._db_model.location_id = character.id
 
-        success, _ = await character.equip(equipment)
+        success, _ = await character.equipment_equip(equipment)
         assert success, "装备应该成功"
         
-        success, msg = await character.unequip(EquipmentSlot.MAIN_HAND)
+        success, msg = await character.equipment_unequip(EquipmentSlot.MAIN_HAND)
         assert success
         assert "卸下成功" in msg
-        assert EquipmentSlot.MAIN_HAND.value not in character.equipped
+        assert EquipmentSlot.MAIN_HAND.value not in character.equipment_slots
 
     @pytest.mark.asyncio
     async def test_unequip_not_equipped(self, character):
         """测试卸下未装备的槽位失败."""
-        success, msg = await character.unequip(EquipmentSlot.MAIN_HAND)
+        success, msg = await character.equipment_unequip(EquipmentSlot.MAIN_HAND)
         assert not success
         assert "该槽位未装备物品" in msg
 
@@ -272,10 +272,10 @@ class TestCharacterEquipmentMixin:
 
         # 装备
         equipment._db_model.location_id = character.id
-        success, _ = await character.equip(equipment)
+        success, _ = await character.equipment_equip(equipment)
         assert success, "装备应该成功"
 
-        total = character.get_total_stats()
+        total = character.equipment_get_stats()
         assert total["attack"] == 25
         assert total["strength"] == 3
 
@@ -288,9 +288,9 @@ class TestCharacterEquipmentMixin:
         character._manager._cache[character.id] = character
 
         equipment._db_model.location_id = character.id
-        await character.equip(equipment)
+        await character.equipment_equip(equipment)
 
-        total = character.get_total_stats()
+        total = character.equipment_get_stats()
         assert total.get("attack", 0) == 0
 
     @pytest.mark.asyncio
@@ -301,7 +301,7 @@ class TestCharacterEquipmentMixin:
         equipment._db_model.location_id = character.id
 
         assert not equipment.is_bound
-        success, _ = await character.equip(equipment)
+        success, _ = await character.equipment_equip(equipment)
         assert success, "装备应该成功"
         assert equipment.is_bound
 

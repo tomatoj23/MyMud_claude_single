@@ -37,6 +37,7 @@ class MockManager:
 
     def __init__(self) -> None:
         self._cache: dict[int, TypeclassBase] = {}
+        self._l1_cache: dict[int, Any] = {}  # 模拟L1缓存
         self.dirty_objects: set[int] = set()
 
     def get(self, obj_id: int) -> TypeclassBase | None:
@@ -44,7 +45,17 @@ class MockManager:
 
     def mark_dirty(self, obj: TypeclassBase) -> None:
         self.dirty_objects.add(obj.id)
-    
+
+    def get_contents_sync(self, location_id: int) -> list[TypeclassBase]:
+        """同步获取指定位置的内容对象（从L1缓存）."""
+        contents: list[TypeclassBase] = []
+        for obj in self._cache.values():
+            if hasattr(obj, '_db_model'):
+                loc_id = getattr(obj._db_model, 'location_id', None)
+                if loc_id == location_id:
+                    contents.append(obj)
+        return contents
+
     async def find(self, **kwargs) -> list[TypeclassBase]:
         """模拟查找方法."""
         # 支持 location 过滤
@@ -289,6 +300,37 @@ class TestTypeclassBase:
     def test_contents_empty(self, typeclass_instance: TypeclassBase):
         """测试 contents 为空列表."""
         assert typeclass_instance.contents == []
+
+    def test_contents_with_items(self, mock_manager: MockManager):
+        """测试 contents 返回包含的对象（同步版本）."""
+        # 创建容器
+        container_model = MockDBModel(id=1, key="container")
+        container = TypeclassBase(mock_manager, container_model)
+        mock_manager._cache[1] = container
+
+        # 创建两个物品，location_id 指向容器
+        item1_model = MockDBModel(id=2, key="sword")
+        item1_model.location_id = 1
+        item1 = TypeclassBase(mock_manager, item1_model)
+        mock_manager._cache[2] = item1
+
+        item2_model = MockDBModel(id=3, key="shield")
+        item2_model.location_id = 1
+        item2 = TypeclassBase(mock_manager, item2_model)
+        mock_manager._cache[3] = item2
+
+        # 创建另一个物品，location_id 不同
+        other_model = MockDBModel(id=4, key="other")
+        other_model.location_id = 999
+        other = TypeclassBase(mock_manager, other_model)
+        mock_manager._cache[4] = other
+
+        # 测试 contents 返回正确列表
+        contents = container.contents
+        assert len(contents) == 2
+        assert item1 in contents
+        assert item2 in contents
+        assert other not in contents
 
     def test_search_contents_found(self, mock_manager: MockManager):
         """测试搜索内容找到对象."""

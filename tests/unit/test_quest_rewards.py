@@ -20,7 +20,7 @@ class TestQuestRewards:
         char.db = MagicMock()
         char.db.get.return_value = 0
         char.db.set = MagicMock()
-        char.learned_wuxue = {}
+        char.wuxue_learned = {}
         
         # 模拟奖励发放
         async def give_rewards(rewards):
@@ -44,7 +44,7 @@ class TestQuestRewards:
             if "wuxue" in rewards:
                 kungfu_key = rewards["wuxue"]
                 # 模拟学习
-                char.learned_wuxue[kungfu_key] = {"level": 1}
+                char.wuxue_learned[kungfu_key] = {"level": 1}
                 msgs.append(f"领悟「测试武功」")
             
             return " ".join(msgs)
@@ -92,7 +92,7 @@ class TestQuestRewards:
         msg = await mock_character._give_rewards(rewards)
         
         assert "领悟" in msg
-        assert "shaolin_jian" in mock_character.learned_wuxue
+        assert "shaolin_jian" in mock_character.wuxue_learned
     
     @pytest.mark.asyncio
     async def test_combined_rewards(self, mock_character):

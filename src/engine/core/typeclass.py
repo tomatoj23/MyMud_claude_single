@@ -265,15 +265,13 @@ class TypeclassBase(metaclass=TypeclassMeta):
     def contents(self) -> list[TypeclassBase]:
         """包含的对象列表（同步版本）.
         
-        从缓存中获取内容，可能不是最新数据。
+        从L1缓存中获取内容，可能不是最新数据。
         如需最新数据请使用 get_contents()。
         
         Returns:
-            缓存中包含的对象列表
+            L1缓存中包含的对象列表
         """
-        # 返回缓存中 location 等于当前对象的对象
-        # 这是一个简化实现，优先保证不报错
-        return []  # 默认返回空列表，使用 get_contents() 获取真实数据
+        return self._manager.get_contents_sync(self.id)
 
     async def search_contents(self, key: str) -> TypeclassBase | None:
         """在内容中搜索指定key的对象.

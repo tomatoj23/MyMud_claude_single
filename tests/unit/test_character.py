@@ -143,9 +143,11 @@ class TestCharacterStatus:
     """动态状态测试."""
 
     def test_default_status(self, character: Character):
-        """测试默认状态."""
-        assert character.get_hp() == (100, 100)
-        assert character.get_mp() == (50, 50)
+        """测试默认状态 - 使用属性计算的最大值."""
+        # HP = 基础100 + 体质*10 + 根骨*5 = 100 + 100 + 75 = 275
+        assert character.get_hp() == (275, 275)
+        # MP = 基础50 + 精神*8 + 根骨*3 = 50 + 80 + 45 = 175
+        assert character.get_mp() == (175, 175)
 
     def test_get_hp(self, character: Character):
         """测试获取气血."""
@@ -242,7 +244,7 @@ class TestCharacterLeveling:
         """测试增加经验但不升级."""
         character.level = 1
         character.exp = 50
-        leveled_up = character.add_exp(40)  # 需要 100 才升级
+        leveled_up = character.add_exp(40)  # 需要 400 才升到2级
         assert not leveled_up
         assert character.level == 1
         assert character.exp == 90
@@ -250,16 +252,16 @@ class TestCharacterLeveling:
     def test_add_exp_with_level_up(self, character: Character):
         """测试增加经验并升级."""
         character.level = 1
-        character.exp = 50
-        leveled_up = character.add_exp(60)  # 超过 100，升级
+        character.exp = 350  # 需要 400 升到2级
+        leveled_up = character.add_exp(60)  # 超过 400，升级
         assert leveled_up
         assert character.level == 2
 
     def test_get_exp_for_level(self, character: Character):
         """测试获取升级所需经验."""
         # 等级 n 需要 n*n*100 经验
-        assert character._get_exp_for_level(2) == 400
-        assert character._get_exp_for_level(3) == 900
+        assert character._get_exp_for_level(2) == 400  # 2*2*100
+        assert character._get_exp_for_level(3) == 900  # 3*3*100
 
     def test_recalculate_status_on_level_up(self, character: Character):
         """测试升级时重新计算状态."""

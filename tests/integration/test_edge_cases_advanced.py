@@ -247,15 +247,15 @@ class TestEquipmentBoundaryConditions:
         sword2.location = char
         
         # 装备第一把
-        result1, _ = await char.equip(sword1)
+        result1, _ = await char.equipment_equip(sword1)
         assert result1 is True
         
         # 装备第二把（应自动替换第一把）
-        result2, _ = await char.equip(sword2)
+        result2, _ = await char.equipment_equip(sword2)
         assert result2 is True
         
         # 最终应只有第二把装备
-        equipped = char.get_equipped(EquipmentSlot.MAIN_HAND)
+        equipped = char.equipment_get_item(EquipmentSlot.MAIN_HAND)
         assert equipped.key == "sword2"
 
 
