@@ -549,14 +549,20 @@ character.wuxue_learn(kungfu)
   - 支持粗体、斜体、代码、颜色标记
   - HP条、表格、列表格式化
   - 17个单元测试
-- [ ] B4-GUI-007: 动画效果
+- [x] B4-GUI-007: 动画效果 ✅ 2026-03-17
+  - AnimationHelper 类实现
+  - 淡入淡出、滑动、脉冲、震动动画
+  - LoadingAnimation 加载动画
+  - TransitionHelper 过渡效果
+  - 窗口启动淡入动画
+  - 12个单元测试
 - [x] B4-GUI-008: 高级配置界面 ✅ 2026-03-17
   - SettingsDialog 对话框
   - 外观、编辑器、游戏三个标签页
   - 主题切换、字体设置、窗口大小等配置
   - 8个单元测试
 
-**Backlog 完成度**: 6/8 (75%)
+**Backlog 完成度**: 8/8 (100%) ✅
 
 ---
 

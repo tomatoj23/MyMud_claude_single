@@ -32,7 +32,7 @@ from PySide6.QtWidgets import (
 
 from src.engine.core.messages import Message, MessageType
 from src.gui.panels import InfoPanel, InputPanel, OutputPanel, StatusPanel
-from src.gui.utils import RichTextFormatter
+from src.gui.utils import AnimationHelper, RichTextFormatter
 from src.utils.logging import get_logger
 
 if TYPE_CHECKING:
@@ -107,6 +107,10 @@ class MainWindow(QMainWindow):
         self._connect_signals()
         self._setup_shortcuts()
         self._setup_menu()
+
+        # 启动时淡入动画
+        fade_in = AnimationHelper.fade_in(self, duration=500)
+        fade_in.start()
 
     def _setup_ui(self) -> None:
         """设置界面布局."""
