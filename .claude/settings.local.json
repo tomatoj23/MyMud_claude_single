@@ -18,7 +18,8 @@
       "Read(//d/My_Projects/MUD_Python/**)",
       "Bash(done)",
       "Bash(cat:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(taskkill:*)"
     ]
   }
 }
