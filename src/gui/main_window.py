@@ -108,9 +108,9 @@ class MainWindow(QMainWindow):
         self._setup_shortcuts()
         self._setup_menu()
 
-        # 启动时淡入动画
-        fade_in = AnimationHelper.fade_in(self, duration=500)
-        fade_in.start()
+        # 启动时淡入动画（可选，通过配置启用）
+        # fade_in = AnimationHelper.fade_in(self, duration=500)
+        # fade_in.start()
 
     def _setup_ui(self) -> None:
         """设置界面布局."""
