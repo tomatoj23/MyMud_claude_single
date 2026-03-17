@@ -42,11 +42,13 @@
 | - Phase 2 | 架构改进 | ✅ 已完成 | 100% |
 | - Phase 3 | 可选优化 | ✅ 已完成 | 100% |
 | **技术债务** | **全部清偿** | ✅ **已完成** | **51/51** |
-| 阶段四 | GUI客户端 | 🔄 进行中 | 5% |
+| 阶段四 | GUI客户端 | 🔄 进行中 | 40% |
 | 阶段五 | 内容制作 | ⏳ 待开始 | 0% |
 | 阶段六 | 存档与系统功能 | ⏳ 待开始 | 0% |
 
-**测试状态**: 1,329+ 测试通过 | **债务状态**: 51/51 已清偿
+**测试状态**: 1,783 测试通过 | **债务状态**: 51/51 已清偿
+
+> 最后更新: 2026-03-17
 
 ---
 
@@ -450,53 +452,125 @@ character.wuxue_learn(kungfu)
 
 ## 🟣 阶段四：GUI客户端（第8周）
 
-### 📅 当前工作计划（2026-02-26更新）
+### 📅 当前工作计划（2026-03-16更新）
 
-**master合并完成**: ✅ `refactor/phase1-combat-transaction` 已合并到 master  
-**当前状态**: 准备开始阶段四 GUI客户端开发
+**Phase 4 GUI MVP**: ✅ T4-GUI-001~010 已完成（2026-03-15）
+**当前状态**: MVP 已打通，Backlog 待后续迭代
+
+### ✅ Phase 4 MVP 完成情况（2026-03-15）
+
+**Batch A: GUI启动骨架** ✅
+- [x] T4-GUI-001: 补齐 main() 入口
+  - 完整启动路径：QApplication + qasync + 引擎初始化 + 默认会话
+  - 错误处理与 QMessageBox 反馈
+- [x] T4-GUI-002: 统一调度器生命周期
+  - 引擎支持调度器注入
+  - async/sync 自动检测（修复 Python 3.14 deprecation）
+  - GUI 模式使用 FlexibleEventScheduler(backend="hybrid")
+- [x] T4-GUI-003: 默认玩家装配
+  - _setup_default_session() 创建默认房间和玩家
+  - GUIManager 持有玩家强引用
+
+**Batch B: 输入/输出/状态闭环** ✅
+- [x] T4-GUI-004: 补齐 UI 组件
+  - 输出区：QTextBrowser（可配置字体）
+  - 输入区：QLineEdit + 发送按钮
+  - 状态区：房间名、HP/MP 进度条、状态标签
+  - 底部状态栏
+- [x] T4-GUI-005: MessageBus 接入 GUI
+  - 订阅消息总线和状态更新
+  - 消息类型着色（error/combat 红、dialogue 蓝、notify 绿、system 灰）
+- [x] T4-GUI-006: 输入接到 process_input()
+  - 回车和按钮触发命令提交
+  - 执行中禁用输入防重复
+  - 异步调用 engine.process_input()
+- [x] T4-GUI-007: 关闭流程与错误反馈
+  - closeEvent 优雅停止引擎
+  - 取消 MessageBus 订阅
+  - 状态栏提示运行状态
+
+**Batch C: 测试与文档** ✅
+- [x] T4-GUI-008: GUI smoke tests
+  - tests/unit/test_gui_smoke.py（6个测试）
+  - 窗口创建、UI组件、GUIManager、信号
+- [x] T4-GUI-009: 关键交互集成测试
+  - tests/integration/test_gui_integration.py（4个测试）
+  - MessageBus→GUI、输入→引擎、关闭→停止
+- [x] T4-GUI-010: 文档回写
+  - phase4_gui_task_list.md 标记完成
+  - phase4_gui_spec.md 更新基线
+  - current_project_spec.md 更新进度
+
+### 📦 交付物
+- ✅ `src/gui/main_window.py` - 完整 GUI 实现（600+ 行）
+- ✅ `src/engine/core/engine.py` - 调度器注入支持
+- ✅ `tests/unit/test_gui_smoke.py` - 6个烟雾测试
+- ✅ `tests/integration/test_gui_integration.py` - 4个集成测试
+- ✅ 文档更新（3个规格文档）
+
+### 🎯 验收标准达成
+- ✅ `make run` 可启动 GUI 窗口
+- ✅ 输入 `look`/`inventory` 有反馈
+- ✅ 未知命令显示错误提示
+- ✅ 关闭窗口正常退出
+- ✅ 10个 GUI 测试全部通过
+- ✅ 1792个全量测试无回归
+
+### 📋 Backlog（后续迭代）
+- [x] B4-GUI-001: 右侧面板填充（地图/任务/装备/背包）✅ 2026-03-17
+  - InfoPanel 类实现（4个标签页）
+  - 集成到 MainWindow
+  - 信号连接与数据更新
+- [x] B4-GUI-002: 主题系统实现 ✅ 2026-03-17
+  - ThemeManager 类实现
+  - dark.qss 暗色主题
+  - light.qss 亮色主题
+  - 集成到 main() 入口
+  - 6个单元测试
+- [x] B4-GUI-003: 快捷键支持 ✅ 2026-03-17
+  - Ctrl+L: 焦点到输入框
+  - Ctrl+K: 清空输出区
+  - Ctrl+Q: 退出
+  - F1/F2/F3: 快速命令 (look/inventory/status)
+  - 4个单元测试
+- [x] B4-GUI-004: 存档/读档 GUI ✅ 2026-03-17
+  - SaveManager 类实现（MessagePack + Gzip）
+  - SaveDialog 和 LoadDialog 对话框
+  - 菜单栏集成（Ctrl+S/Ctrl+O）
+  - 5个单元测试
+- [x] B4-GUI-005: panels/ 目录拆分 ✅ 2026-03-17
+  - StatusPanel - 状态面板
+  - OutputPanel - 输出面板
+  - InputPanel - 输入面板
+  - InfoPanel - 信息面板
+  - 重构 MainWindow 使用独立面板
+- [x] B4-GUI-006: 富文本提示优化 ✅ 2026-03-17
+  - RichTextFormatter 类实现
+  - 支持粗体、斜体、代码、颜色标记
+  - HP条、表格、列表格式化
+  - 17个单元测试
+- [ ] B4-GUI-007: 动画效果
+- [x] B4-GUI-008: 高级配置界面 ✅ 2026-03-17
+  - SettingsDialog 对话框
+  - 外观、编辑器、游戏三个标签页
+  - 主题切换、字体设置、窗口大小等配置
+  - 8个单元测试
+
+**Backlog 完成度**: 6/8 (75%)
 
 ---
 
-## 🎯 近期任务（本周）
+## 🎯 近期任务（明天继续）
 
-### 准备阶段
-- [x] 1. 完成架构改进分支合并
-- [x] 2. 更新开发日志和文档
-- [ ] 3. 清理已合并分支
-  - [ ] 删除 `refactor/phase1-combat-transaction`
-  - [ ] 处理 `feature/name-attribute-migration`
-  - [ ] 核实 `debt/architecture-cleanup`
-- [ ] 4. 推送master到远程
+### 下一步工作选项
+1. **继续 Phase 4 Backlog**：实现右侧面板、主题系统等增强功能
+2. **开始 Phase 5 内容系统**：门派、内功、武学内容制作
+3. **开始 Phase 6 存档系统**：存档/读档功能实现
+4. **技术债务维护**：代码优化、测试覆盖提升
 
-### 阶段四启动
-- [ ] 5. 阅读DEVELOPMENT_PLAN.md阶段四相关章节
-- [ ] 6. 研究现有main_window.py代码结构
-- [ ] 7. 创建阶段四开发分支 `phase4-gui-client`
+**建议优先级**：先完成 Phase 4 关键 Backlog（右侧面板、主题），再进入 Phase 5
 
 ---
-
-### 阶段四核心任务
-
-#### Sprint 1: GUI基础框架
-- [ ] **实现qasync桥接模块**
-  - [ ] 创建 `src/gui/async_bridge.py`
-  - [ ] 实现异步事件循环桥接
-  - [ ] 实现GUI信号与引擎回调的连接
-- [ ] **完善主窗口框架**
-  - [ ] 添加菜单栏（游戏、视图、帮助）
-  - [ ] 添加状态栏（连接状态、时间显示）
-  - [ ] 实现窗口布局管理
-- [ ] **创建基础面板**
-  - [ ] 主视图面板（场景描述区域）
-  - [ ] 命令输入面板（输入框+发送按钮）
-- [ ] **编写单元测试**
-  - [ ] 测试异步桥接功能
-  - [ ] 测试信号槽连接
-
-**Sprint 1 交付物**:
-- `src/gui/async_bridge.py` - 异步桥接模块
-- 更新的 `src/gui/main_window.py` - 完整主窗口
-- `src/gui/panels/main_view.py` - 主视图面板
 - `src/gui/panels/command_input.py` - 命令输入面板
 - `tests/gui/test_async_bridge.py` - 桥接测试
 

@@ -4,6 +4,6 @@
 专注于还原金庸武侠世界的游戏体验。
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "JinYong MUD Team"
 __license__ = "MIT"

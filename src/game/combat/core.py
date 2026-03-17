@@ -12,6 +12,8 @@ from contextlib import contextmanager
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
+from src.utils.config_loader import get_balance_config
+
 from .transaction import CombatTransaction, TransactionManager
 
 if TYPE_CHECKING:
@@ -106,15 +108,6 @@ class CombatSession:
         # 玩家输入命令时
         await session.handle_player_command(player, "kill", {"target": enemy})
     """
-
-    # 基础冷却时间（秒）
-    BASE_COOLDOWN = 3.0
-    # 敏捷对冷却的影响系数
-    AGILITY_FACTOR = 0.02
-    # 最小冷却时间
-    MIN_COOLDOWN = 1.0
-    # 逃跑冷却时间
-    FLEE_COOLDOWN = 5.0
 
     def __init__(
         self,
@@ -231,10 +224,10 @@ class CombatSession:
 
     async def _ai_decide(self, combatant: Combatant) -> CombatAction | None:
         """AI决策行动."""
-        from .ai import CombatAI
-
-        ai = CombatAI()
-        return await ai.decide(combatant.character, self)
+        if not hasattr(self, "_combat_ai") or self._combat_ai is None:
+            from .ai import CombatAI
+            self._combat_ai = CombatAI()
+        return await self._combat_ai.decide(combatant.character, self)
 
     def _can_fight(self, character: Character) -> bool:
         """检查角色是否还能战斗."""
@@ -434,12 +427,15 @@ class CombatSession:
         flee_chance = 0.5 + agility_diff * 0.02
         flee_chance = max(0.2, min(0.9, flee_chance))
 
+        config = get_balance_config()
+        flee_cooldown = config.get("combat", "cooldown", "flee", default=5.0)
+
         if random.random() < flee_chance:
-            combatant.set_cooldown(self.FLEE_COOLDOWN)
+            combatant.set_cooldown(flee_cooldown)
             await self.stop(CombatResult.FLEE)
             return True, "你成功逃跑了！"
         else:
-            combatant.set_cooldown(self.FLEE_COOLDOWN)
+            combatant.set_cooldown(flee_cooldown)
             return True, "逃跑失败！"
 
     async def _do_defend(
@@ -576,16 +572,20 @@ class CombatSession:
         公式: 基础冷却 * (1 - 敏捷 * 系数)
         最小冷却: 1秒
         """
+        config = get_balance_config()
+
         if move and move.cooldown > 0:
             base = move.cooldown
         else:
-            base = self.BASE_COOLDOWN
+            base = config.get("combat", "cooldown", "base", default=3.0)
 
         agility = character.get_agility()
-        reduction = agility * self.AGILITY_FACTOR
-        cooldown = base * max(0.3, 1.0 - reduction)
+        agility_factor = config.get("combat", "cooldown", "agility_factor", default=0.02)
+        reduction = min(agility * agility_factor, 0.7)
+        cooldown = base * (1.0 - reduction)
 
-        return max(self.MIN_COOLDOWN, cooldown)
+        min_cooldown = config.get("combat", "cooldown", "min", default=1.0)
+        return max(min_cooldown, cooldown)
 
     async def _check_end(self) -> CombatResult | None:
         """检查战斗是否结束."""

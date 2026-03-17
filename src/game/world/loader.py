@@ -129,6 +129,7 @@ class WorldLoader:
                 data = yaml.safe_load(f)
             return data.get("area") if data else None
         except Exception:
+            logger.exception(f"加载区域元数据失败: {file_path}")
             return None
 
     async def _preload_adjacent_areas(self, room: Room) -> None:

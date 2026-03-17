@@ -1,0 +1,7 @@
+"""GUI工具模块."""
+
+from __future__ import annotations
+
+from .rich_text import RichTextFormatter
+
+__all__ = ["RichTextFormatter"]

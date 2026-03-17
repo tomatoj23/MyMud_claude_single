@@ -1,0 +1,4 @@
+interface:
+  display_name: "MUD Master"
+  short_description: "Plan, implement, and review work in this MUD repo"
+  default_prompt: "Use $mud-master to plan, implement, or review work in this Jin Yong MUD repository."

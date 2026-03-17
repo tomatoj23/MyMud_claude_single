@@ -230,10 +230,29 @@ class LoggingManager:
     def reload(self) -> None:
         """重新加载日志配置(热重载)."""
         self._setup_handlers()
-        for logger in self._loggers.values():
-            logger.handlers.clear()
+        for name, log in self._loggers.items():
+            log.handlers.clear()
+            log.setLevel(self._config.level)
             for handler in self._handlers:
-                logger.addHandler(handler)
+                log.addHandler(handler)
+            # 重建模块专属文件处理器
+            if self._config.file_output:
+                module_file = self._config.log_dir / f"{name.replace('.', '_')}.log"
+                module_handler = logging.handlers.RotatingFileHandler(
+                    module_file,
+                    maxBytes=self._config.max_bytes,
+                    backupCount=self._config.backup_count,
+                    encoding="utf-8",
+                )
+                module_handler.setLevel(self._config.level)
+                module_handler.setFormatter(
+                    ColoredFormatter(
+                        self._config.format_str,
+                        self._config.date_format,
+                        use_colors=False,
+                    )
+                )
+                log.addHandler(module_handler)
 
     def shutdown(self) -> None:
         """关闭所有日志处理器.

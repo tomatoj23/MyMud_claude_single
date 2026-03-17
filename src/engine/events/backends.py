@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any
@@ -109,7 +110,7 @@ class AsyncioBackend(SchedulerBackend):
         async def delayed_task():
             await asyncio.sleep(delay)
             try:
-                if asyncio.iscoroutinefunction(callback):
+                if inspect.iscoroutinefunction(callback):
                     await callback(*args, **kwargs)
                 else:
                     callback(*args, **kwargs)
@@ -133,7 +134,7 @@ class AsyncioBackend(SchedulerBackend):
             while True:
                 await asyncio.sleep(interval)
                 try:
-                    if asyncio.iscoroutinefunction(callback):
+                    if inspect.iscoroutinefunction(callback):
                         await callback(*args, **kwargs)
                     else:
                         callback(*args, **kwargs)
@@ -209,7 +210,7 @@ class QtBackend(SchedulerBackend):
         
         def on_timeout():
             try:
-                if asyncio.iscoroutinefunction(callback):
+                if inspect.iscoroutinefunction(callback):
                     asyncio.create_task(callback(*args, **kwargs))
                 else:
                     callback(*args, **kwargs)
@@ -238,7 +239,7 @@ class QtBackend(SchedulerBackend):
         
         def on_timeout():
             try:
-                if asyncio.iscoroutinefunction(callback):
+                if inspect.iscoroutinefunction(callback):
                     asyncio.create_task(callback(*args, **kwargs))
                 else:
                     callback(*args, **kwargs)

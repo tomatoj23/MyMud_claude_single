@@ -128,6 +128,7 @@ class MovementController:
             return True
             
         except Exception:
+            logger.exception(f"移动到目标失败: npc={npc.id}, target={target}")
             return False
     
     @staticmethod
@@ -200,6 +201,7 @@ class MovementController:
             return NPCUtils.get_distance(current_coords, home_coords)
             
         except Exception:
+            logger.exception(f"获取到家距离失败: npc={npc.id}")
             return float('inf')
 
 
@@ -229,6 +231,7 @@ class CombatChecker:
             try:
                 return npc.is_in_combat()
             except Exception:
+                logger.exception(f"检查战斗状态失败: npc={npc.id}")
                 pass
         
         return False

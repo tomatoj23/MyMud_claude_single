@@ -21,6 +21,7 @@ class TestRoomEnvironment:
     def room(self):
         """创建测试房间."""
         mock_manager = Mock()
+        mock_manager.get_contents_sync = Mock(return_value=[])
         mock_model = Mock()
         mock_model.id = 1
         mock_model.key = "测试房间"
@@ -28,7 +29,7 @@ class TestRoomEnvironment:
         mock_model.location_id = None
         mock_model.attributes = {}
         mock_model.contents = []
-        
+
         room = Room(mock_manager, mock_model)
         return room
 
@@ -58,6 +59,7 @@ class TestRoomGetExit:
     def room(self):
         """创建测试房间."""
         mock_manager = Mock()
+        mock_manager.get_contents_sync = Mock(return_value=[])
         mock_model = Mock()
         mock_model.id = 1
         mock_model.key = "测试房间"
@@ -65,7 +67,7 @@ class TestRoomGetExit:
         mock_model.location_id = None
         mock_model.attributes = {}
         mock_model.contents = []
-        
+
         room = Room(mock_manager, mock_model)
         return room
 
@@ -87,6 +89,7 @@ class TestRoomGetCharacters:
     def room(self):
         """创建测试房间."""
         mock_manager = Mock()
+        mock_manager.get_contents_sync = Mock(return_value=[])
         mock_model = Mock()
         mock_model.id = 1
         mock_model.key = "测试房间"
@@ -94,7 +97,7 @@ class TestRoomGetCharacters:
         mock_model.location_id = None
         mock_model.attributes = {}
         mock_model.contents = []
-        
+
         room = Room(mock_manager, mock_model)
         return room
 
@@ -118,6 +121,7 @@ class TestRoomGetItems:
     def room(self):
         """创建测试房间."""
         mock_manager = Mock()
+        mock_manager.get_contents_sync = Mock(return_value=[])
         mock_model = Mock()
         mock_model.id = 1
         mock_model.key = "测试房间"
@@ -125,7 +129,7 @@ class TestRoomGetItems:
         mock_model.location_id = None
         mock_model.attributes = {}
         mock_model.contents = []
-        
+
         room = Room(mock_manager, mock_model)
         return room
 
@@ -176,6 +180,7 @@ class TestRoomNeighborRooms:
     def room(self):
         """创建测试房间."""
         mock_manager = Mock()
+        mock_manager.get_contents_sync = Mock(return_value=[])
         mock_model = Mock()
         mock_model.id = 1
         mock_model.key = "测试房间"
@@ -183,7 +188,7 @@ class TestRoomNeighborRooms:
         mock_model.location_id = None
         mock_model.attributes = {}
         mock_model.contents = []
-        
+
         room = Room(mock_manager, mock_model)
         return room
 

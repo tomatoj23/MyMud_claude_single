@@ -5,11 +5,14 @@
 """
 from __future__ import annotations
 
+import logging
 from typing import Any, Callable
 from enum import Enum, auto
 import time
 import asyncio
 from collections import deque
+
+logger = logging.getLogger(__name__)
 
 
 class MessageType(Enum):
@@ -97,7 +100,7 @@ class MessageHandler:
             self._message_bus.emit(Message(msg_type, text, kwargs))
         else:
             # 如果没有消息总线，打印到控制台
-            print(f"[{msg_type}] {text}")
+            logger.info(f"[{msg_type}] {text}")
     
     def msg_system(self, text: str, **kwargs) -> None:
         """发送系统消息."""
@@ -161,7 +164,7 @@ class MessageBus:
             try:
                 handler(message)
             except Exception as e:
-                print(f"Message handler error: {e}")
+                logger.exception(f"Message handler error: {e}")
     
     def emit_text(self, msg_type: MessageType | str, content: str, **data) -> None:
         """发送文本消息.
@@ -188,7 +191,7 @@ class MessageBus:
             try:
                 handler(data)
             except Exception as e:
-                print(f"Status handler error: {e}")
+                logger.exception(f"Status handler error: {e}")
     
     def subscribe(self, handler: Callable[[Message], None]) -> None:
         """订阅消息.

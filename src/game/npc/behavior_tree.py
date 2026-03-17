@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import TYPE_CHECKING, Callable
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from .core import NPC
@@ -113,7 +116,7 @@ class ActionNode(BehaviorNode):
             return NodeStatus.FAILURE
         except Exception as e:
             # 可以在这里添加日志记录
-            print(f"ActionNode error: {e}")
+            logger.exception(f"ActionNode error: {e}")
             return NodeStatus.FAILURE
 
 
@@ -133,6 +136,7 @@ class ConditionNode(BehaviorNode):
                 return NodeStatus.SUCCESS
             return NodeStatus.FAILURE
         except Exception:
+            logger.exception(f"ConditionNode执行失败: {self.condition}")
             return NodeStatus.FAILURE
 
 

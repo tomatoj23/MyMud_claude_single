@@ -1,3 +1,7 @@
+> 状态说明：
+> - 阶段二已完成，当前实现以 `src/game/typeclasses/character.py` 为中心。
+> - 文中 `menpai.py`、`internal_power.py` 等路径表示可选拆分蓝图；当前仓库未单独落地时，请回到 `character.py`、相关测试和调用点实现。
+
 # Character 角色系统
 
 ## 概述
@@ -284,7 +288,8 @@ class Character(TypeclassBase):
 ## 门派系统 Mixin
 
 ```python
-# src/game/typeclasses/menpai.py
+# planned split: src/game/typeclasses/menpai.py
+# current repo anchor: src/game/typeclasses/character.py
 class Menpai:
     """门派定义"""
     
@@ -375,7 +380,8 @@ class CharacterMenpaiMixin:
 ## 内力系统 Mixin
 
 ```python
-# src/game/typeclasses/internal_power.py
+# planned split: src/game/typeclasses/internal_power.py
+# current repo anchor: src/game/typeclasses/character.py
 from enum import Enum
 
 
@@ -486,3 +492,6 @@ menpai = Menpai(key="少林", name="少林寺", ...)
 await character.join_menpai(menpai)
 print(character.menpai)  # "少林"
 ```
+
+
+

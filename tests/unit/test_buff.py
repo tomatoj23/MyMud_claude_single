@@ -10,7 +10,13 @@ from unittest.mock import Mock
 
 import pytest
 
-from src.game.combat.buff import Buff, BuffManager, BuffType
+from src.game.combat.buff import (
+    Buff,
+    BuffManager,
+    BuffType,
+    create_poison_buff,
+    create_regen_buff,
+)
 
 
 class TestBuffType:
@@ -330,18 +336,18 @@ class TestBuffManager:
         
         assert mods == {}
 
-    def test_get_stats_modifier_single(self, manager, test_buff):
+    @pytest.mark.asyncio
+    async def test_get_stats_modifier_single(self, manager, test_buff):
         """测试单个BUFF的属性修正."""
-        import asyncio
-        asyncio.run(manager.add(test_buff))
+        await manager.add(test_buff)
         
         mods = manager.get_stats_modifier()
         
         assert mods == {"strength": 10}
 
-    def test_get_stats_modifier_stacked(self, manager):
+    @pytest.mark.asyncio
+    async def test_get_stats_modifier_stacked(self, manager):
         """测试叠加BUFF的属性修正."""
-        import asyncio
         
         buff = Buff(
             key="stacked",
@@ -360,32 +366,32 @@ class TestBuffManager:
                 stats_mod={"strength": 5},
                 stack_limit=3
             )
-            asyncio.run(manager.add(b))
+            await manager.add(b)
         
         mods = manager.get_stats_modifier()
         
         # 3层，每层+5力量
         assert mods["strength"] == 15
 
-    def test_get_stats_modifier_multiple_buffs(self, manager):
+    @pytest.mark.asyncio
+    async def test_get_stats_modifier_multiple_buffs(self, manager):
         """测试多个不同BUFF的属性修正."""
-        import asyncio
         
         buff1 = Buff(key="buff1", name="力量BUFF", duration=5.0, stats_mod={"strength": 10})
         buff2 = Buff(key="buff2", name="敏捷BUFF", duration=5.0, stats_mod={"agility": 5})
         
-        asyncio.run(manager.add(buff1))
-        asyncio.run(manager.add(buff2))
+        await manager.add(buff1)
+        await manager.add(buff2)
         
         mods = manager.get_stats_modifier()
         
         assert mods["strength"] == 10
         assert mods["agility"] == 5
 
-    def test_has_buff_true(self, manager, test_buff):
+    @pytest.mark.asyncio
+    async def test_has_buff_true(self, manager, test_buff):
         """测试检查存在BUFF."""
-        import asyncio
-        asyncio.run(manager.add(test_buff))
+        await manager.add(test_buff)
         
         assert manager.has_buff("test_buff") is True
 
@@ -393,54 +399,54 @@ class TestBuffManager:
         """测试检查不存在BUFF."""
         assert manager.has_buff("nonexistent") is False
 
-    def test_has_buff_expired(self, manager):
+    @pytest.mark.asyncio
+    async def test_has_buff_expired(self, manager):
         """测试检查过期BUFF返回False."""
-        import asyncio
         
         buff = Buff(
             key="expired",
             name="过期",
             duration=0.001
         )
-        asyncio.run(manager.add(buff))
+        await manager.add(buff)
         time.sleep(0.002)
         
         assert manager.has_buff("expired") is False
 
-    def test_get_buffs_all(self, manager, test_buff):
+    @pytest.mark.asyncio
+    async def test_get_buffs_all(self, manager, test_buff):
         """测试获取所有BUFF."""
-        import asyncio
-        asyncio.run(manager.add(test_buff))
+        await manager.add(test_buff)
         
         buffs = manager.get_buffs()
         
         assert len(buffs) == 1
         assert buffs[0].key == "test_buff"
 
-    def test_get_buffs_by_type(self, manager):
+    @pytest.mark.asyncio
+    async def test_get_buffs_by_type(self, manager):
         """测试按类型获取BUFF."""
-        import asyncio
         
         buff1 = Buff(key="b1", name="增益", duration=5.0, buff_type=BuffType.BUFF)
         buff2 = Buff(key="b2", name="减益", duration=5.0, buff_type=BuffType.DEBUFF)
         
-        asyncio.run(manager.add(buff1))
-        asyncio.run(manager.add(buff2))
+        await manager.add(buff1)
+        await manager.add(buff2)
         
         buffs = manager.get_buffs(BuffType.BUFF)
         
         assert len(buffs) == 1
         assert buffs[0].key == "b1"
 
-    def test_get_buffs_excludes_expired(self, manager):
+    @pytest.mark.asyncio
+    async def test_get_buffs_excludes_expired(self, manager):
         """测试获取BUFF时排除过期."""
-        import asyncio
         
         buff1 = Buff(key="active", name="活跃", duration=10.0)
         buff2 = Buff(key="expired", name="过期", duration=0.001)
         
-        asyncio.run(manager.add(buff1))
-        asyncio.run(manager.add(buff2))
+        await manager.add(buff1)
+        await manager.add(buff2)
         
         time.sleep(0.002)
         
@@ -449,10 +455,10 @@ class TestBuffManager:
         assert len(buffs) == 1
         assert buffs[0].key == "active"
 
-    def test_clear(self, manager, test_buff):
+    @pytest.mark.asyncio
+    async def test_clear(self, manager, test_buff):
         """测试清空所有BUFF."""
-        import asyncio
-        asyncio.run(manager.add(test_buff))
+        await manager.add(test_buff)
         
         manager.clear()
         
@@ -464,10 +470,10 @@ class TestBuffManager:
         
         assert summary == []
 
-    def test_get_summary(self, manager, test_buff):
+    @pytest.mark.asyncio
+    async def test_get_summary(self, manager, test_buff):
         """测试BUFF摘要."""
-        import asyncio
-        asyncio.run(manager.add(test_buff))
+        await manager.add(test_buff)
         
         summary = manager.get_summary()
         
@@ -477,3 +483,33 @@ class TestBuffManager:
         assert summary[0]["type"] == "neutral"
         assert summary[0]["stacks"] == 1
         assert "remaining" in summary[0]
+
+
+class TestBuffFactories:
+    """测试 BUFF 工厂函数."""
+
+    @pytest.mark.asyncio
+    async def test_poison_buff_on_tick(self):
+        """测试中毒BUFF的on_tick回调被执行."""
+        character = Mock()
+        character.hp = 100
+
+        buff = create_poison_buff(damage_per_tick=10)
+        manager = BuffManager(character)
+        await manager.add(buff)
+        await manager.tick()
+
+        character.modify_hp.assert_called_with(-10)
+
+    @pytest.mark.asyncio
+    async def test_regen_buff_on_tick(self):
+        """测试恢复BUFF的on_tick回调被执行."""
+        character = Mock()
+
+        buff = create_regen_buff(heal_per_tick=15)
+        manager = BuffManager(character)
+        await manager.add(buff)
+        await manager.tick()
+
+        character.modify_hp.assert_called_with(15)
+

@@ -21,6 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Games/Entertainment :: Role-Playing",
     "Topic :: Software Development :: Libraries :: Application Frameworks",
 ]
@@ -66,7 +67,7 @@ packages = ["src"]
 
 [tool.black]
 line-length = 100
-target-version = ["py311", "py312"]
+target-version = ["py311", "py312", "py313"]
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -115,7 +116,7 @@ convention = "google"
 "tools/**/*" = ["D"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.13"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -162,6 +163,7 @@ markers = [
     "boundaries: Boundary tests",
     "randomized: Randomized tests",
     "security: Security tests",
+    "performance: Performance stress tests",
 ]
 asyncio_mode = "auto"
 

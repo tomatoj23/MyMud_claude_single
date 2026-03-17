@@ -1,3 +1,16 @@
+> 状态说明：
+> - 对应阶段：阶段四（当前进行中）。
+> - 当前已落地 GUI 入口为 `src/gui/main_window.py`。
+> - 文中 `async_bridge.py`、`panels/*.py`、`themes/manager.py` 等路径是规划期拆分目标；若文件尚不存在，先确认是否真的需要新建。
+
+## 快速定位
+
+- 总体入口：看“主窗口架构”
+- Qt/asyncio 桥接：看“qasync 桥接”
+- 视图拆分：看“核心面板”及其子节
+- 主题：看“主题系统”
+- 当前真实入口优先以 `src/gui/main_window.py` 为准，规划路径只在需要拆分时参考
+
 # GUI 系统
 
 ## 概述
@@ -611,3 +624,4 @@ class ThemeManager:
         }
         """
 ```
+

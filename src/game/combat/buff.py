@@ -245,6 +245,55 @@ class BuffManager:
             if not b.is_expired(now)
         ]
 
+    @property
+    def active_buffs(self) -> list[Buff]:
+        """获取所有活跃BUFF."""
+        now = time.time()
+        return [b for b in self._buffs.values() if not b.is_expired(now)]
+
+    async def update(self, elapsed: float) -> list[str]:
+        """更新BUFF持续时间并清理过期BUFF.
+
+        Args:
+            elapsed: 经过的时间（秒）
+
+        Returns:
+            结算消息列表
+        """
+        return await self.tick()
+
+    def serialize(self) -> list[dict]:
+        """序列化所有活跃BUFF用于持久化."""
+        now = time.time()
+        return [
+            {
+                "key": b.key,
+                "name": b.name,
+                "duration": b.get_remaining_time(now),
+                "buff_type": b.buff_type.value,
+                "stack_limit": b.stack_limit,
+                "stacks": b.stacks,
+                "stats_mod": b.stats_mod,
+            }
+            for b in self._buffs.values()
+            if not b.is_expired(now)
+        ]
+
+    def deserialize(self, data: list[dict]) -> None:
+        """从序列化数据恢复BUFF."""
+        self._buffs.clear()
+        for item in data:
+            buff = Buff(
+                key=item["key"],
+                name=item["name"],
+                duration=item.get("duration", 0),
+                buff_type=BuffType(item.get("buff_type", "neutral")),
+                stack_limit=item.get("stack_limit", 1),
+                stats_mod=item.get("stats_mod", {}),
+            )
+            buff.stacks = item.get("stacks", 1)
+            self._buffs[buff.key] = buff
+
 
 # 常用BUFF定义
 

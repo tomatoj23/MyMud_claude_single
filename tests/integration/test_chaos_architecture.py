@@ -160,7 +160,7 @@ class TestChaosCombatStrategy:
         # 测试随机字符串作为策略名
         for _ in range(100):
             random_strategy = ''.join(random.choices(string.ascii_lowercase, k=10))
-            assert random_strategy not in strategies or isinstance(strategies.get(random_strategy), object)
+            assert random_strategy not in strategies or strategies.get(random_strategy) is not None
     
     @pytest.mark.asyncio
     async def test_chaos_strategy_with_malformed_args(self):
@@ -184,8 +184,8 @@ class TestChaosCombatStrategy:
         for args in malformed_args:
             try:
                 valid, msg = strategy.validate(session, combatant, args if args else {})
-                # 应该返回验证失败，而不是抛出异常
-                assert valid is False or valid is True  # 不抛出异常即可
+                assert isinstance(valid, bool)
+                assert isinstance(msg, str) or msg is None
             except Exception:
                 # 即使是异常也应该是受控的
                 pass
@@ -240,8 +240,10 @@ class TestChaosValidation:
             
             try:
                 errors = validator.validate(char)
-                # 应该能处理而不崩溃
+                # 应该能处理而不崩溃，且返回错误列表
                 assert isinstance(errors, list)
+                for err in errors:
+                    assert err is not None
             except (TypeError, ValueError):
                 # 这些异常是可接受的
                 pass

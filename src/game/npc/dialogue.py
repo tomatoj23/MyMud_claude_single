@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Callable
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from src.game.typeclasses.character import Character
@@ -130,7 +133,7 @@ class DialogueSystem:
             return None
 
         # 获取好感度
-        favor = character.npc_relations.get_favor(npc_key)
+        favor = character.npc_relations.get_favor(npc_key) if hasattr(character, "npc_relations") else 0
 
         # 根据好感度选择起始节点
         if favor <= -50 and "hostile" in npc_dialogues:
@@ -248,12 +251,12 @@ class DialogueSystem:
 
         # 好感度条件
         if "min_favor" in conditions:
-            favor = character.npc_relations.get_favor(npc.key)
+            favor = character.npc_relations.get_favor(npc.key) if hasattr(character, "npc_relations") else 0
             if favor < conditions["min_favor"]:
                 return False
 
         if "max_favor" in conditions:
-            favor = character.npc_relations.get_favor(npc.key)
+            favor = character.npc_relations.get_favor(npc.key) if hasattr(character, "npc_relations") else 0
             if favor > conditions["max_favor"]:
                 return False
 
@@ -316,7 +319,7 @@ class DialogueSystem:
             return
 
         # 好感度变化
-        if "favor_delta" in effects:
+        if "favor_delta" in effects and hasattr(character, "npc_relations"):
             delta = effects["favor_delta"]
             reason = effects.get("favor_reason", "")
             character.npc_relations.modify_favor(npc.key, delta, reason)
@@ -412,6 +415,7 @@ class DialogueSystem:
                     item.location = character
             return True
         except Exception:
+            logger.exception(f"给予物品失败: character={character.id}, item_key={item_key}")
             return False
     
     def _unlock_quest_for_character(self, character: Character, quest_key: str) -> bool:
@@ -435,6 +439,7 @@ class DialogueSystem:
                 character.db.set("available_quests", available)
             return True
         except Exception:
+            logger.exception(f"解锁任务失败: character={character.id}, quest_key={quest_key}")
             return False
     
     def _record_world_state(self, character: Character, choice_id: str, choice_value: str) -> None:

@@ -3,6 +3,8 @@
 将魔法字符串替换为类型安全的枚举.
 """
 
+from __future__ import annotations
+
 from enum import Enum, auto
 
 

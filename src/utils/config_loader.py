@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import copy
 import logging
 import os
 from pathlib import Path
@@ -169,7 +170,7 @@ class BalanceConfig:
     
     def get_all(self) -> dict[str, Any]:
         """获取完整配置."""
-        return self._config.copy()
+        return copy.deepcopy(self._config)
 
 
 # 全局配置实例

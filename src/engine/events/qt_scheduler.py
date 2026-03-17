@@ -5,6 +5,8 @@
 """
 from __future__ import annotations
 
+import asyncio
+import inspect
 import time
 import uuid
 from collections.abc import Callable
@@ -116,7 +118,7 @@ class FlexibleEventScheduler(EventScheduler):
                 return
             
             try:
-                if asyncio.iscoroutinefunction(callback):
+                if inspect.iscoroutinefunction(callback):
                     await callback()
                 else:
                     callback()
@@ -140,7 +142,7 @@ class FlexibleEventScheduler(EventScheduler):
             count[0] += 1
             
             try:
-                if asyncio.iscoroutinefunction(event.callback):
+                if inspect.iscoroutinefunction(event.callback):
                     await event.callback()
                 else:
                     event.callback()
@@ -168,7 +170,7 @@ class FlexibleEventScheduler(EventScheduler):
             # 检查条件
             if event.condition and event.condition():
                 try:
-                    if asyncio.iscoroutinefunction(event.callback):
+                    if inspect.iscoroutinefunction(event.callback):
                         await event.callback()
                     else:
                         event.callback()
@@ -227,7 +229,7 @@ class FlexibleEventScheduler(EventScheduler):
                 continue
             
             try:
-                if asyncio.iscoroutinefunction(event.callback):
+                if inspect.iscoroutinefunction(event.callback):
                     await event.callback()
                 else:
                     event.callback()
@@ -292,6 +294,3 @@ class FlexibleEventScheduler(EventScheduler):
 
 # 向后兼容：EventScheduler 现在是 FlexibleEventScheduler 的别名
 EventScheduler = FlexibleEventScheduler
-
-
-import asyncio

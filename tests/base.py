@@ -23,17 +23,24 @@ class MockDBModel:
 
 class MockManager:
     """Mock对象管理器."""
-    
+
     def __init__(self):
         self.dirty_objects = set()
         self._cache = {}
-    
+
     def mark_dirty(self, obj):
         self.dirty_objects.add(getattr(obj, 'id', id(obj)))
-    
+
     def get(self, obj_id):
         return self._cache.get(obj_id)
-    
+
+    def get_contents_sync(self, obj_id):
+        """同步获取对象内容."""
+        return [
+            obj for obj in self._cache.values()
+            if getattr(getattr(obj, '_db_model', None), 'location_id', None) == obj_id
+        ]
+
     async def find(self, **kwargs):
         """Mock find method."""
         return []

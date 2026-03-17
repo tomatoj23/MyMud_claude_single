@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Bash(python:*)",
+      "Bash(wc:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(cd:*)",
+      "Bash(for f:*)",
+      "Bash(/tmp/test_fix_summary.md:*)",
+      "Read(//tmp/**)",
+      "Bash(python3:*)",
+      "Bash(pytest:*)",
+      "Bash(for file:*)",
+      "Bash(do echo:*)",
+      "Read(//d/My_Projects/MUD_Python/**)",
+      "Bash(done)",
+      "Bash(cat:*)",
+      "Bash(pip install:*)"
+    ]
+  }
+}

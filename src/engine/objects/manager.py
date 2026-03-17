@@ -27,6 +27,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 import weakref
@@ -79,6 +80,9 @@ class ObjectManager:
         self._query_cache_ttl = DEFAULT_QUERY_CACHE_TTL
 
         self._initialized = False
+
+        # 保存操作锁
+        self._save_lock = asyncio.Lock()
 
     async def initialize(self) -> None:
         """初始化对象管理器."""
@@ -579,20 +583,21 @@ class ObjectManager:
         Returns:
             保存的对象数量
         """
-        if not self._dirty_objects:
-            return 0
+        async with self._save_lock:
+            if not self._dirty_objects:
+                return 0
 
-        count = 0
-        # 复制列表避免遍历时修改
-        dirty_ids = list(self._dirty_objects)
+            count = 0
+            # 复制列表避免遍历时修改
+            dirty_ids = list(self._dirty_objects)
 
-        for obj_id in dirty_ids:
-            obj = self._get_from_l1(obj_id)
-            if obj and obj.is_dirty() and await self.save(obj):
-                count += 1
+            for obj_id in dirty_ids:
+                obj = self._get_from_l1(obj_id)
+                if obj and obj.is_dirty() and await self.save(obj):
+                    count += 1
 
-        logger.info(f"批量保存完成: {count} 个对象")
-        return count
+            logger.info(f"批量保存完成: {count} 个对象")
+            return count
 
     def mark_dirty(self, obj: TypeclassBase) -> None:
         """标记对象为脏数据.

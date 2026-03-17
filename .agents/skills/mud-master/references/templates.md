@@ -1,3 +1,7 @@
+> 使用说明：
+> - 模板只作为脚手架参考；优先对齐当前仓库已有文件名和模块布局。
+> - 例如命令基类当前实际在 `src/engine/commands/command.py`，不是独立的 `base.py`。
+
 # 代码模板
 
 ## AttributeHandler 模板
@@ -127,58 +131,42 @@ class TypeclassBase(ABC):
 
 ## Command 模板
 
+当前仓库已经有 `src/engine/commands/command.py` 基类。新增命令时优先写子类，不要重新实现基础命令框架：
+
 ```python
-# src/engine/commands/base.py
-from typing import Any, ClassVar
-from abc import ABC, abstractmethod
+# src/game/commands/cmd_look.py
+from src.engine.commands.command import Command, CommandResult
+from src.engine.core.messages import MessageType
 
 
-class Command(ABC):
-    """命令基类。
-    
-    所有MUD命令的基类，定义命令的基本结构和执行流程。
-    
-    Attributes:
-        key: 命令主键
-        aliases: 命令别名列表
-        locks: 权限锁字符串
-        help_text: 帮助文本
-    """
-    
-    key: ClassVar[str] = ""
-    aliases: ClassVar[list[str]] = []
-    locks: ClassVar[str] = ""
-    help_text: ClassVar[str] = ""
-    
-    def __init__(self, caller: Any, cmd_string: str, args: str) -> None:
-        """初始化命令实例。
-        
-        Args:
-            caller: 命令执行者
-            cmd_string: 输入的命令字符串
-            args: 命令参数
-        """
-        self.caller = caller
-        self.cmd_string = cmd_string
-        self.args = args
-    
-    @abstractmethod
-    def execute(self) -> None:
-        """执行命令。子类必须实现。"""
-        pass
-    
-    def check_access(self) -> bool:
-        """检查执行权限。"""
-        # 实现权限检查逻辑
+class CmdLook(Command):
+    """查看当前环境。"""
+
+    key = "look"
+    aliases = ["l"]
+    help_category = "general"
+    help_text = "查看当前房间和周围对象。"
+
+    def parse(self) -> bool:
+        self.target_name = self.args.strip()
         return True
+
+    async def execute(self) -> CommandResult:
+        if self.caller is None:
+            return CommandResult(False, "调用者未设置")
+
+        self.msg("你环顾四周。", MessageType.INFO)
+        return CommandResult(True, "查看完成")
 ```
+
+运行时字段 `caller`、`args`、`cmdstring`、`session` 由命令处理器或测试在实例化后填充。
 
 ## CmdSet 模板
 
 ```python
 # src/engine/commands/cmdset.py
 from typing import Type
-from .base import Command
+from .command import Command
 
 
 class CmdSet:
@@ -224,3 +212,5 @@ class CmdSet:
             result.commands.update(other.commands)
         return result
 ```
+
+

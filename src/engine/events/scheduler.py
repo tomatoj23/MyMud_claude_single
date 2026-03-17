@@ -273,6 +273,7 @@ class EventScheduler:
         for i, event in enumerate(self._frame_events):
             if event.id == event_id:
                 self._frame_events.pop(i)
+                self._cancelled_events.discard(event_id)
                 logger.debug(f"取消帧事件: id={event_id}")
                 return True
 
@@ -313,6 +314,12 @@ class EventScheduler:
                         continue
 
                     await self._execute_frame_event(event)
+
+                # 清理过期的已取消事件ID
+                if len(self._cancelled_events) > 100:
+                    queued_ids = {e.id for _, _, e in self._queue}
+                    frame_ids = {e.id for e in self._frame_events}
+                    self._cancelled_events &= queued_ids | frame_ids
 
                 # 等待一小段时间
                 await asyncio.sleep(0.01)

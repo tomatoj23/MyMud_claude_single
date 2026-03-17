@@ -500,7 +500,7 @@ class TestComplexPlayerJourney:
         
         # 验证战斗冷却计算
         cooldown = combat._calculate_cooldown(player, None)  # None 表示普通攻击
-        assert cooldown >= combat.MIN_COOLDOWN
+        assert cooldown >= 1.0  # MIN_COOLDOWN default
         
         # BUFF 系统测试
         buff_manager = BuffManager(player)

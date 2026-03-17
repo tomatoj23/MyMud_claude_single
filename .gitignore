@@ -150,7 +150,6 @@ log/
 *.log
 *.log.*
 saves/
-save/
 userdata/
 user_data/
 config.local.yaml

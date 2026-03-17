@@ -9,18 +9,21 @@
 ### 系统要求
 
 - **操作系统**: Windows 10/11, macOS, Linux
-- **Python**: 3.11 或更高版本
+- **Python**: 3.11+（推荐 3.13）
 - **内存**: 4GB+ 推荐
 - **磁盘空间**: 1GB+
 
 ### 安装Python
 
 ```bash
-# 检查Python版本
+# 检查 Python 版本
+py -0p
 python --version
 
-# 如果版本低于3.11，请安装新版
-# 推荐从 https://www.python.org/downloads/ 下载
+# 推荐安装 Python 3.13
+# 如果你本地已经在 Python 3.14 上稳定运行，可以继续沿用
+# 但全新环境仍建议优先使用 Python 3.13
+# 推荐从 https://www.python.org/downloads/ 下载 Python 3.13
 ```
 
 ---
@@ -30,20 +33,20 @@ python --version
 ### 1. 克隆仓库
 
 ```bash
-git clone https://github.com/tomatoj23/MyMud.git
-cd MyMud
+git clone https://github.com/jinyong-mud/jinyong-mud.git
+cd jinyong-mud
 ```
 
 ### 2. 创建虚拟环境
 
 ```bash
-# Windows
-python -m venv venv
-venv\Scripts\activate
+# Windows（推荐新环境使用 3.13）
+py -3.13 -m venv .venv
+.\\.venv\\Scripts\\Activate.ps1
 
 # macOS/Linux
-python3 -m venv venv
-source venv/bin/activate
+python3.13 -m venv .venv
+source .venv/bin/activate
 ```
 
 ### 3. 安装依赖
@@ -62,10 +65,7 @@ pip install -e ".[dev]"
 # 运行测试
 pytest tests/unit/ -q
 
-# 预期输出：
-# ============================= test session starts =============================
-# ...
-# ========================= 1023 passed in X.XXs ==============================
+# 预期输出：测试总数会随开发进度变化，但应整体通过
 ```
 
 ---

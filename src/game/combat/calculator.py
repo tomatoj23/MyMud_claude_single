@@ -115,7 +115,9 @@ class CombatCalculator:
         final_damage = damage_after_env * variance
 
         # 7. 暴击判定
-        is_crit = random.random() < self.BASE_CRIT_RATE
+        from src.utils.config_loader import get_balance_config
+        crit_rate = get_balance_config().get("combat", "damage", "crit_chance", default=0.05)
+        is_crit = random.random() < crit_rate
         if is_crit:
             final_damage *= self.CRIT_DAMAGE
             messages.append("暴击！")
@@ -145,8 +147,12 @@ class CombatCalculator:
         base_hit = self.BASE_HIT_RATE
 
         # 敏捷差影响
+        from src.utils.config_loader import get_balance_config
+        agility_mod_factor = get_balance_config().get(
+            "combat", "hit_rate", "agility_mod_per_point", default=0.005
+        )
         agility_diff = attacker.get_agility() - defender.get_agility()
-        agility_mod = agility_diff * 0.005
+        agility_mod = agility_diff * agility_mod_factor
 
         # 招式修正（某些招式可能有命中加成）(TD-025)
         move_mod = 0.0

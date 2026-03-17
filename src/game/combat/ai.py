@@ -5,6 +5,8 @@ from __future__ import annotations
 import random
 from typing import TYPE_CHECKING
 
+from src.utils.config_loader import get_balance_config
+
 if TYPE_CHECKING:
     from src.game.typeclasses.character import Character
     from src.game.combat.core import CombatSession, CombatAction
@@ -81,28 +83,27 @@ class SmartAI(CombatAI):
     - 保留强力招式的冷却
     """
 
-    # 低血量阈值
-    LOW_HP_THRESHOLD = 0.3
-    # 逃跑概率
-    FLEE_CHANCE = 0.4
-    # 防御概率
-    DEFEND_CHANCE = 0.3
-
     async def decide(
         self, character: Character, combat: CombatSession
     ) -> CombatAction:
         """智能决策."""
+        config = get_balance_config()
+
         hp, max_hp = character.get_hp()
         hp_ratio = hp / max_hp if max_hp > 0 else 0
 
         # 低血量时的决策
-        if hp_ratio < self.LOW_HP_THRESHOLD:
+        low_hp_threshold = config.get("combat", "ai", "low_hp_threshold", default=0.3)
+        if hp_ratio < low_hp_threshold:
+            flee_chance = config.get("combat", "ai", "flee_chance", default=0.4)
+            defend_chance = config.get("combat", "ai", "defend_chance", default=0.3)
+
             roll = random.random()
-            if roll < self.FLEE_CHANCE:
+            if roll < flee_chance:
                 from .core import CombatAction
 
                 return CombatAction("flee")
-            elif roll < self.FLEE_CHANCE + self.DEFEND_CHANCE:
+            elif roll < flee_chance + defend_chance:
                 from .core import CombatAction
 
                 return CombatAction("defend")

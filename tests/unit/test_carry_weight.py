@@ -33,6 +33,13 @@ class MockManager:
         if hasattr(obj, 'id'):
             self.dirty_objects.add(obj.id)
 
+    def get_contents_sync(self, obj_id):
+        """同步获取对象内容."""
+        return [
+            obj for obj in self._cache.values()
+            if getattr(getattr(obj, '_db_model', None), 'location_id', None) == obj_id
+        ]
+
 
 @pytest.fixture
 def mock_manager():

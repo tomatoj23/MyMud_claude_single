@@ -618,6 +618,7 @@ class TestCommandHandler:
         cmdset = handler.get_cmdset(caller)
 
         assert cmdset is not None
+        assert hasattr(cmdset, 'match')
 
     @pytest.mark.asyncio
     async def test_handle_empty_input(self, handler: CommandHandler):

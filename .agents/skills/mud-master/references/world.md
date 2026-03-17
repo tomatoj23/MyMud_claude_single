@@ -1,3 +1,15 @@
+> 状态说明：
+> - 阶段二已完成，当前世界相关实现主要落在 `src/game/typeclasses/room.py`、`src/game/world/loader.py`、`src/game/world/pathfinding.py`。
+> - 文中独立的 `area.py` 模块属于设计期拆分目标；如果文件不存在，不要仅因本文示例而直接新建。
+
+## 快速定位
+
+- 房间/出口：看“Room 房间类”“Exit 出口类”
+- 区域与加载：看“区域 Area 定义”“世界动态加载管理器”
+- 寻路：看“A* 寻路算法”
+- 数据格式：看“世界数据 YAML 格式”
+- 如果只是修当前实现，优先回到 `src/game/typeclasses/room.py`、`src/game/world/loader.py`、`src/game/world/pathfinding.py`
+
 # 地图系统
 
 ## 概述
@@ -276,7 +288,8 @@ class Exit(TypeclassBase):
 ## 区域 Area 定义
 
 ```python
-# src/game/world/area.py
+# planned split: src/game/world/area.py
+# current repo anchors: src/game/typeclasses/room.py, src/game/world/loader.py, src/game/world/pathfinding.py
 from dataclasses import dataclass
 from typing import Optional
 
@@ -655,3 +668,5 @@ if path:
     for direction, room in path:
         print(f"向{direction}走 -> {room.key}")
 ```
+
+

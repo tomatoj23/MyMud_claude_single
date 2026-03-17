@@ -156,8 +156,8 @@ COUNTER_MATRIX: dict[WuxueType, list[WuxueType]] = {
     WuxueType.JIAN: [WuxueType.DAO, WuxueType.GUN],
     WuxueType.DAO: [WuxueType.GUN, WuxueType.QUAN],
     WuxueType.GUN: [WuxueType.QUAN, WuxueType.ZHANG],
-    WuxueType.NEIGONG: [],
-    WuxueType.QINGGONG: [],
+    WuxueType.NEIGONG: [WuxueType.QUAN, WuxueType.ZHANG],  # 内功克制外功拳掌
+    WuxueType.QINGGONG: [WuxueType.GUN, WuxueType.DAO],  # 轻功克制重兵器
 }
 
 COUNTER_BONUS = 0.2  # 克制伤害加成

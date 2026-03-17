@@ -1,3 +1,16 @@
+> 使用说明：
+> - 下方目录结构是“目标结构 + 设计蓝图”的混合示意，不是当前仓库树的逐字镜像。
+> - 当前真实结构以仓库 `src/` 为准；例如 ObjectManager 当前在 `src/engine/objects/manager.py`，Command 基类当前在 `src/engine/commands/command.py`。
+> - `engine/save/`、`gui/async_bridge.py` 等目录和文件属于未来阶段或可选拆分路径。
+
+## 快速定位
+
+- 目录蓝图：看“目录结构”
+- 依赖与构建：看“pyproject.toml”
+- 运行配置：看“配置文件”
+- 日志与配置管理：看“日志配置”“配置管理”
+- 清理与忽略规则：看“.gitignore”
+
 # 项目骨架
 
 ## 目录结构
@@ -385,3 +398,4 @@ Thumbs.db
 htmlcov/
 .pytest_cache/
 ```
+

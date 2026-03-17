@@ -1,0 +1,215 @@
+/* 金庸武侠MUD - 亮色主题 */
+
+/* 全局样式 */
+QWidget {
+    background-color: #f3f3f3;
+    color: #1e1e1e;
+    font-family: "Microsoft YaHei", "SimHei", sans-serif;
+    font-size: 10pt;
+}
+
+/* 主窗口 */
+QMainWindow {
+    background-color: #ffffff;
+}
+
+/* 文本浏览器（输出区） */
+QTextBrowser {
+    background-color: #ffffff;
+    color: #1e1e1e;
+    border: 1px solid #d4d4d4;
+    border-radius: 4px;
+    padding: 8px;
+    selection-background-color: #add6ff;
+}
+
+/* 输入框 */
+QLineEdit {
+    background-color: #ffffff;
+    color: #1e1e1e;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    padding: 6px;
+    selection-background-color: #add6ff;
+}
+
+QLineEdit:focus {
+    border: 1px solid #0078d4;
+}
+
+/* 按钮 */
+QPushButton {
+    background-color: #0078d4;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 16px;
+    min-width: 60px;
+}
+
+QPushButton:hover {
+    background-color: #106ebe;
+}
+
+QPushButton:pressed {
+    background-color: #005a9e;
+}
+
+QPushButton:disabled {
+    background-color: #e0e0e0;
+    color: #a0a0a0;
+}
+
+/* 进度条 */
+QProgressBar {
+    background-color: #e0e0e0;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    text-align: center;
+    height: 20px;
+}
+
+QProgressBar::chunk {
+    background-color: #0078d4;
+    border-radius: 3px;
+}
+
+/* 标签 */
+QLabel {
+    background-color: transparent;
+    color: #1e1e1e;
+}
+
+/* 分组框 */
+QGroupBox {
+    border: 1px solid #d4d4d4;
+    border-radius: 4px;
+    margin-top: 8px;
+    padding-top: 8px;
+    font-weight: bold;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 4px;
+    color: #0078d4;
+}
+
+/* 列表控件 */
+QListWidget {
+    background-color: #ffffff;
+    color: #1e1e1e;
+    border: 1px solid #d4d4d4;
+    border-radius: 4px;
+    padding: 4px;
+    selection-background-color: #add6ff;
+}
+
+QListWidget::item {
+    padding: 4px;
+    border-radius: 2px;
+}
+
+QListWidget::item:hover {
+    background-color: #f0f0f0;
+}
+
+QListWidget::item:selected {
+    background-color: #add6ff;
+    color: #1e1e1e;
+}
+
+/* 标签页控件 */
+QTabWidget::pane {
+    border: 1px solid #d4d4d4;
+    border-radius: 4px;
+    background-color: #f3f3f3;
+}
+
+QTabBar::tab {
+    background-color: #f3f3f3;
+    color: #1e1e1e;
+    border: 1px solid #d4d4d4;
+    border-bottom: none;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    padding: 6px 12px;
+    margin-right: 2px;
+}
+
+QTabBar::tab:selected {
+    background-color: #0078d4;
+    color: #ffffff;
+}
+
+QTabBar::tab:hover:!selected {
+    background-color: #e0e0e0;
+}
+
+/* 状态栏 */
+QStatusBar {
+    background-color: #0078d4;
+    color: #ffffff;
+    border-top: 1px solid #005a9e;
+}
+
+/* 分割器 */
+QSplitter::handle {
+    background-color: #d4d4d4;
+}
+
+QSplitter::handle:horizontal {
+    width: 2px;
+}
+
+QSplitter::handle:vertical {
+    height: 2px;
+}
+
+QSplitter::handle:hover {
+    background-color: #0078d4;
+}
+
+/* 滚动条 */
+QScrollBar:vertical {
+    background-color: #f3f3f3;
+    width: 12px;
+    border: none;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #c0c0c0;
+    border-radius: 6px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #a0a0a0;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    background-color: #f3f3f3;
+    height: 12px;
+    border: none;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #c0c0c0;
+    border-radius: 6px;
+    min-width: 20px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: #a0a0a0;
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    width: 0px;
+}

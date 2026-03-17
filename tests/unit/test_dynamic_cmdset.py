@@ -72,9 +72,9 @@ class TestDynamicCmdset:
     def test_basic_cmdset(self, handler, mock_caller_no_extras):
         """测试基础命令集合."""
         cmdset = handler.get_cmdset(mock_caller_no_extras)
-        
-        # 基础命令集合应该可用（handler初始化时应该有默认命令）
+
         assert cmdset is not None
+        assert hasattr(cmdset, 'match')
     
     def test_location_local_cmds(self, handler, mock_caller_with_location_cmds):
         """测试位置本地命令."""
@@ -97,6 +97,7 @@ class TestDynamicCmdset:
         # 不应报错
         cmdset = handler.get_cmdset(mock_caller_no_extras)
         assert cmdset is not None
+        assert hasattr(cmdset, 'match')
     
     def test_location_without_get_local_cmds(self, handler):
         """测试位置没有get_local_cmds方法."""
@@ -117,3 +118,4 @@ class TestDynamicCmdset:
         # 不应报错
         cmdset = handler.get_cmdset(caller)
         assert cmdset is not None
+        assert hasattr(cmdset, 'match')

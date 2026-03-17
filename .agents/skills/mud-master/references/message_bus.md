@@ -41,7 +41,7 @@ class MessageType(Enum):
 ### 1. 发送消息
 
 ```python
-from src.engine.core.messages import MessageBus, MessageType
+from src.engine.core.messages import MessageBus, MessageType, get_message_bus
 
 # 获取全局消息总线
 bus = get_message_bus()
@@ -61,32 +61,37 @@ bus.emit_text(
 ### 2. 在命令中使用
 
 ```python
-from src.engine.commands.base import Command
+from src.engine.commands.command import Command, CommandResult
 from src.engine.core.messages import MessageType
 
 class CmdAttack(Command):
     key = "attack"
-    
-    async def execute(self):
-        target = self.parse_target()
+
+    async def execute(self) -> CommandResult:
+        target = self.search(self.args.strip())
         if not target:
             self.msg("你要攻击谁？", MessageType.ERROR)
-            return
-        
-        damage = self.calculate_damage()
+            return CommandResult(False, "目标不存在")
+
+        damage = 50
         target.hp -= damage
-        
+
         # 发送不同类型的消息
         self.msg(f"你对{target.name}造成了{damage}点伤害！", MessageType.COMBAT)
-        
+
         if target.hp <= 0:
             self.msg(f"{target.name}倒下了！", MessageType.SYSTEM)
+
+        return CommandResult(True, "攻击完成")
 ```
 
 ### 3. 订阅消息（GUI中）
 
 ```python
 from PySide6.QtCore import QObject, Signal
+
+from src.engine.core.messages import Message, MessageType, get_message_bus
+
 
 class GameController(QObject):
     # 定义信号
@@ -273,12 +278,12 @@ class Command:
         if self.caller:
             self.caller.msg(text, **kwargs)
 
-# 新代码
-class Command(MessageHandler):
+# 新代码（当前仓库中的 Command.msg 逻辑）
+class Command:
     def msg(self, text: str, msg_type=MessageType.SYSTEM, **kwargs):
-        if hasattr(self.caller, 'message_bus') and self.caller.message_bus:
+        if hasattr(self.caller, "message_bus") and self.caller.message_bus:
             self.caller.message_bus.emit_text(msg_type, text, **kwargs)
-        elif hasattr(self.caller, 'msg'):
+        elif hasattr(self.caller, "msg"):
             self.caller.msg(text, **kwargs)
         else:
             get_message_bus().emit_text(msg_type, text, **kwargs)

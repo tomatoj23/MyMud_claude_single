@@ -3,6 +3,8 @@
 提供参数验证和输入清理功能.
 """
 
+from __future__ import annotations
+
 import re
 from typing import Any
 

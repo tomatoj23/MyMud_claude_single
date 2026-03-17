@@ -1,3 +1,11 @@
+## 快速定位
+
+- 任务模型与状态：看“任务系统”“任务数据模型”
+- NPC 核心类型：看“NPC系统”“NPC类型类”
+- 行为树：看“行为树基础框架”
+- 好感度、对话和交互：看“好感度与对话系统”
+- 如果只是修现有实现，先回到 `src/game/quest/core.py`、`src/game/npc/core.py`、`src/game/npc/behavior_tree.py`、`src/game/npc/dialogue.py`
+
 # 任务与NPC系统
 
 ## 任务系统

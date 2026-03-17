@@ -1,3 +1,11 @@
+## 快速定位
+
+- 战斗循环与冷却：看“战斗会话”“冷却时间公式”
+- 伤害与命中：看“战斗数值计算”
+- 状态系统：看“BUFF/DEBUFF系统”
+- AI：看“战斗AI”
+- 如果要修当前实现，优先对照 `src/game/combat/core.py`、`calculator.py`、`buff.py`、`ai.py`、`transaction.py`
+
 # 战斗系统（即时制）
 
 ## 概述

@@ -3,6 +3,8 @@
 定义分层的异常体系，提供详细的错误信息.
 """
 
+from __future__ import annotations
+
 
 class GameException(Exception):
     """游戏基础异常."""

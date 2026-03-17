@@ -252,4 +252,5 @@ class DatabaseManager:
             await self._connection.execute("SELECT 1")
             return True
         except Exception:
+            logger.exception("数据库连接健康检查失败")
             return False

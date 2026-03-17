@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from src.game.typeclasses.character import Character
@@ -413,7 +416,7 @@ class CharacterQuestMixin:
             
             return True
         except Exception:
-            # 创建失败（如背包已满）
+            logger.exception(f"给予任务奖励失败: character={self}, item_key={item_key}, quantity={quantity}")
             return False
 
     # ===== 查询方法 =====

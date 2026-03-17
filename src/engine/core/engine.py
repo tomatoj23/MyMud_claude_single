@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 from contextlib import suppress
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -44,16 +45,18 @@ class GameEngine:
     def __init__(
         self,
         config: Config | None = None,
-        message_bus: MessageBus | None = None
+        message_bus: MessageBus | None = None,
+        scheduler: EventScheduler | None = None
     ) -> None:
         """初始化引擎（不启动子系统）.
 
         Args:
             config: 配置对象，None则使用全局配置
             message_bus: 消息总线，None则使用全局实例
+            scheduler: 事件调度器，None则使用默认EventScheduler
         """
         self.config = config or get_config()
-        
+
         # 消息总线
         self._message_bus = message_bus or get_message_bus()
 
@@ -62,6 +65,7 @@ class GameEngine:
         self._objects: ObjectManager | None = None
         self._commands: CommandHandler | None = None
         self._events: EventScheduler | None = None
+        self._injected_scheduler = scheduler
 
         self._running = False
         self._main_task: asyncio.Task[Any] | None = None
@@ -137,8 +141,12 @@ class GameEngine:
         logger.info("命令处理器初始化完成")
 
         # 4. 初始化事件调度器
-        self._events = EventScheduler(self.config.game.tick_rate)
-        logger.info("事件调度器初始化完成")
+        if self._injected_scheduler:
+            self._events = self._injected_scheduler
+            logger.info("使用注入的事件调度器")
+        else:
+            self._events = EventScheduler(self.config.game.tick_rate)
+            logger.info("事件调度器初始化完成")
 
         logger.info("游戏引擎初始化完成")
 
@@ -155,7 +163,10 @@ class GameEngine:
 
         # 启动事件调度器
         if self._events:
-            self._events.start()
+            if inspect.iscoroutinefunction(self._events.start):
+                await self._events.start()
+            else:
+                self._events.start()
 
         # 启动自动保存任务
         self._auto_save_task = asyncio.create_task(self._auto_save_loop())
@@ -190,7 +201,10 @@ class GameEngine:
 
         # 停止事件调度器
         if self._events:
-            self._events.stop()
+            if inspect.iscoroutinefunction(self._events.stop):
+                await self._events.stop()
+            else:
+                self._events.stop()
             logger.info("事件调度器已停止")
 
         # 关闭数据库连接
